@@ -19,6 +19,12 @@ Sub CorrectorDecember(ws As Worksheet)
     Dim skipRow As Boolean
     
     For R = 5 To 1699
+        'if r1 and r2 are empty - change sheet
+        'if r1 and r2 are not empty - continue
+        If ws.Cells(R, 1).Value = "" And ws.Cells(R, 2).Value = "" Then
+            Exit For
+        End If
+        
         skipRow = False
         
         If ws.Cells(R, 113).Value <> 0 Then
