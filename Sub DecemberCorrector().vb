@@ -51,8 +51,7 @@ Sub CorrectorDecember(ws As Worksheet)
                         ws.Cells(R, 108).Select
                         'resize the selection to 5 columns to 112
                         ws.Cells(R, 108).Resize(1, 5).Select
-                        'multiply the values in the selection with the value in cell 125 at once, without formats
-                        ' Selection.PasteSpecial Paste:=xlPasteAll, Operation:=xlMultiply, SkipBlanks:=False, Transpose:=False
+                        'multiply the values in the selection with the value in cell 125 at once
                         Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlMultiply, SkipBlanks:=False, Transpose:=False
                         'check if the value in cell 125 is between 0.9 and 1.001 - if not - copy again new value of cell 125 and repeat 5.3 and 5.4
                     Loop While Not (ws.Cells(R, 125).Value >= 0.9 And ws.Cells(R, 125).Value <= 1.001)
