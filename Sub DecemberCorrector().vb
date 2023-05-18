@@ -17,14 +17,14 @@ End Sub
 Sub CorrectorDecember(ws As Worksheet)
     Dim R As Long, K As Long
     Dim skipRow As Boolean
-    
+    'make current sheet active
+    ws.Activate
     For R = 5 To 1699
         'if r1 and r2 are empty - change sheet
         'if r1 and r2 are not empty - continue
         If ws.Cells(R, 1).Value = "" And ws.Cells(R, 2).Value = "" Then
             Exit For
         End If
-        
         skipRow = False
         
         If ws.Cells(R, 113).Value <> 0 Then
@@ -48,6 +48,7 @@ Sub CorrectorDecember(ws As Worksheet)
                 
                 If Not skipRow Then
                     Do
+                        counter_of_loops = counter_of_loops + 1
                         ' ws.Cells(R, 108).Resize(1, 5).Value = Application.WorksheetFunction.Transpose(Application.WorksheetFunction.Transpose(ws.Cells(R, 108).Resize(1, 5).Value)) * ws.Cells(R, 125).Value
                         ' ws.Cells(R, 125).Value = Application.WorksheetFunction.Max(0, ws.Cells(R, 125).Value - Application.WorksheetFunction.Sum(ws.Cells(R, 108).Resize(1, 5).Value))
                         'select and copy cell 125
@@ -59,8 +60,12 @@ Sub CorrectorDecember(ws As Worksheet)
                         ws.Cells(R, 108).Resize(1, 5).Select
                         'multiply the values in the selection with the value in cell 125 at once
                         Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlMultiply, SkipBlanks:=False, Transpose:=False
+
+                        ' if counter_of_Loops > 50 Then exit loop Do
+                        if counter_of_loops > 50 or ws.Cells(R, 125).Value <= 0.01 Then Exit do
                         'check if the value in cell 125 is between 0.9 and 1.001 - if not - copy again new value of cell 125 and repeat 5.3 and 5.4
                     Loop While Not (ws.Cells(R, 125).Value >= 0.9 And ws.Cells(R, 125).Value <= 1.001)
+                    End If
                 End If
             End If
         End If
