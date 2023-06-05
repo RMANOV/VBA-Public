@@ -34,6 +34,7 @@ Sub CorrectorDecember(ws As Worksheet)
                     If (ws.Cells(R, K).Interior.ColorIndex = 36 Or ws.Cells(R, K).Interior.ColorIndex = 39) and ws.Cells(R, 125).Value > 1 Then 'if the color is 36 or 39 and the value in cell 125 is > 1 then skip the row, but if the color is 36 or 39 and the value in cell 125 is <= 1 then continue
                         skipRow = True
                         Exit For
+                        
                     End If
                 Next K
                 
@@ -42,6 +43,7 @@ Sub CorrectorDecember(ws As Worksheet)
                         If (ws.Cells(R, K).Interior.ColorIndex = 36 Or ws.Cells(R, K).Interior.ColorIndex = 39) and ws.Cells(R, 125).Value > 1 Then 'if the color is 36 or 39 and the value in cell 125 is > 1 then skip the row, but if the color is 36 or 39 and the value in cell 125 is <= 1 then continue
                             skipRow = True
                             Exit For
+                        
                         End If
                     Next K
                 End If
@@ -68,7 +70,7 @@ Sub CorrectorDecember(ws As Worksheet)
                     End If
                 End If
             End If
-        End If
+        'End If
     Next R
 End Sub
 
