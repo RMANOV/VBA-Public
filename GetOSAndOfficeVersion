@@ -1,0 +1,37 @@
+Sub GetOSAndOfficeVersion()
+    ' Èçâëè÷àíå íà èíôîðìàöèÿ çà îïåðàöèîííàòà ñèñòåìà
+    Dim osVersion As String
+    osVersion = Environ$("os")
+    MsgBox "Âåðñèÿ íà îïåðàöèîííàòà ñèñòåìà: " & osVersion
+    
+    ' Èçâëè÷àíå íà èíôîðìàöèÿ çà âåðñèÿòà íà Office
+    Dim officeVersion As String
+    officeVersion = Application.Version
+    MsgBox "Âåðñèÿ íà Office: " & officeVersion
+End Sub
+
+Sub GetOSAndOfficeInfo2()
+    ' Èçâëè÷àíå íà èíôîðìàöèÿ çà îïåðàöèîííàòà ñèñòåìà
+    Dim osInfo As Object
+    Set osInfo = CreateObject("WScript.Shell")
+    MsgBox "Âåðñèÿ íà îïåðàöèîííàòà ñèñòåìà: " & osInfo.RegRead("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProductName")
+    
+    ' Èçâëè÷àíå íà èíôîðìàöèÿ çà âåðñèÿòà íà Office
+    Dim officeInfo As Object
+    Set officeInfo = CreateObject("WScript.Shell")
+    MsgBox "Âåðñèÿ íà Office: " & officeInfo.RegRead("HKLM\SOFTWARE\Microsoft\Office\14.0\Outlook\Bitness")
+End Sub
+
+
+Sub GetOSAndOfficeInfo1()
+    ' Èçâëè÷àíå íà èíôîðìàöèÿ çà îïåðàöèîííàòà ñèñòåìà
+    Dim osInfo As Object
+    Set osInfo = CreateObject("Scripting.FileSystemObject")
+    MsgBox "Âåðñèÿ íà îïåðàöèîííàòà ñèñòåìà: " & osInfo.GetFileVersion("C:\Windows\System32\kernel32.dll")
+    
+    ' Èçâëè÷àíå íà èíôîðìàöèÿ çà âåðñèÿòà íà Office
+    Dim officeVersion As String
+    officeVersion = Application.Version
+    MsgBox "Âåðñèÿ íà Office: " & officeVersion
+End Sub
+
