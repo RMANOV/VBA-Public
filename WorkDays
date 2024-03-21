@@ -1,0 +1,65 @@
+Function WorkDays(Start As Date, Finish As Date) As Integer
+    Dim TotalDays As Integer
+    Dim WeekendDays As Integer
+    Dim Holidays As Range
+    Dim HolidayCount As Integer
+    Dim i As Integer
+
+    ' Calculate the total days within the period
+    TotalDays = Finish - Start + 1
+
+    ' Calculate the number of weekend days (Saturdays and Sundays)
+    For i = 0 To TotalDays - 1
+        If Weekday(Start + i, vbMonday) >= 6 Then
+            WeekendDays = WeekendDays + 1
+        End If
+    Next i
+
+    ' Set the Holidays range to your list of holidays
+    ' You will need to modify this to match your worksheet
+    Set Holidays = Worksheets("Sheet1").Range("A2:A10")
+
+    ' Calculate the number of holidays within the period
+    For Each cell In Holidays
+        If cell.Value >= Start And cell.Value <= Finish Then
+            HolidayCount = HolidayCount + 1
+        End If
+    Next cell
+
+    ' Subtract the number of weekend days and holidays from the total days
+    WorkDays = TotalDays - WeekendDays - HolidayCount
+End Function
+
+Private Sub Worksheet_Calculate()
+    Dim StartDate As Date
+    Dim EndDate As Date
+    Dim CurrentDate As Date
+    Dim WorkedDays As Integer
+    Dim RemainingDays As Integer
+    Dim EndTime As Date
+    Dim CurrentTime As Date
+    Dim TimeLeft As Date
+
+    ' Set the start date, end date, and current date
+    StartDate = DateValue("06.11.2023")
+    EndDate = DateValue("06.05.2024")
+    CurrentDate = Now
+
+    ' Calculate the number of worked days and remaining days
+    WorkedDays = WorkDays(StartDate, CurrentDate)
+    RemainingDays = WorkDays(CurrentDate, EndDate)
+
+    ' Set the end time to 17:30
+    EndTime = TimeValue("17:30:00")
+    
+    ' Get the current time
+    CurrentTime = Time()
+    
+    ' Calculate the absolute value of the time left until the end of the workday
+    TimeLeft = (EndTime - CurrentTime)
+
+    ' Display the number of worked days, remaining days, and time left in one message box
+    MsgBox "Worked days: " & WorkedDays & vbCrLf & "Remaining days: " & RemainingDays & vbCrLf & "Time left: " & Format(TimeLeft, "hh:mm:ss")
+End Sub
+
+
