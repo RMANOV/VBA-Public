@@ -1,20 +1,13 @@
 Sub CopyPasteValues()
-    '1
-    'Selection.Copy
-    'Selection.PasteSpecial Paste:=xlPasteValues
-    'Application.CutCopyMode = False
+    Dim cell As Range
 
-    ' Dim cell As Range
-    ' For Each cell In Selection
-    '     If IsEmpty(cell) Or cell.Value = "N/A" Then
-    '         cell.Value = 0
-    '     End If
-    ' Next cell
-
-    '2
-    'Selection.Value = Evaluate("IF(ISNA(" & Selection.Address & "),0," & Selection.Address & ")") ' Replace N/A with 0
+    Selection.Value = Evaluate("IF(ISBLANK(" & Selection.Address & "), 0, IF(" & Selection.Address & "=""#N/A"", 0, " & Selection.Address & "))")
     
-    '3
-    Selection.Value = Evaluate("IF(ISBLANK(" & Selection.Address & "), 0, IF(" & Selection.Address & "=""N/A"", 0, " & Selection.Address & "))")
+    
+    For Each cell In Selection
+    If IsError(cell.Value) Then
+        If cell.Value = CVErr(xlErrNA) Then cell.Value = 0
+    End If
+    Next cell
 
 End Sub
