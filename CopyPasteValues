@@ -1,13 +1,5 @@
 Sub CopyPasteValues()
-    Dim cell As Range
 
-    Selection.Value = Evaluate("IF(ISBLANK(" & Selection.Address & "), 0, IF(" & Selection.Address & "=""#N/A"", 0, " & Selection.Address & "))")
-    
-    
-    For Each cell In Selection
-    If IsError(cell.Value) Then
-        If cell.Value = CVErr(xlErrNA) Then cell.Value = 0
-    End If
-    Next cell
+    Selection.Value = Evaluate("IF(ISERROR(" & Selection.Address & "), 0, IF(ISBLANK(" & Selection.Address & "), 0, " & Selection.Address & "))")
 
 End Sub
