@@ -1,0 +1,80 @@
+Sub ProcessAndExportData()
+    Application.ScreenUpdating = False
+    'Application.Calculation = xlCalculationManual
+    'Application.EnableEvents = False
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(1) ' Assuming the data is in the first sheet
+
+    Dim lastRow As Long
+    'lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row ' Find the last row with data
+    lastRow = ActiveSheet.Cells(ActiveSheet.Rows.Count, "A").End(xlUp).Row
+    
+    ' Read data into an array for fast processing
+    Dim dataRange As Range
+    Set dataRange = ws.Range("A2:E" & lastRow)
+    Dim data As Variant
+    data = dataRange.Value
+
+    Dim exportData As Collection
+    Set exportData = New Collection
+
+    Dim emailDict As Object, phoneDict As Object
+    Set emailDict = CreateObject("Scripting.Dictionary")
+    Set phoneDict = CreateObject("Scripting.Dictionary")
+
+    Dim i As Long
+    For i = LBound(data, 1) To UBound(data, 1)
+        ' Email
+        If Not emailDict.Exists(data(i, 3)) Then
+            emailDict.Add data(i, 3), New Collection
+        End If
+        emailDict(data(i, 3)).Add i
+
+        ' Phone
+        If Not phoneDict.Exists(data(i, 2)) Then
+            phoneDict.Add data(i, 2), New Collection
+        End If
+        phoneDict(data(i, 2)).Add i
+    Next i
+
+    ' Process duplicates for email and phone
+    Dim key As Variant
+    ProcessDuplicates emailDict, data, exportData
+    ProcessDuplicates phoneDict, data, exportData
+
+    ' Export to a new sheet
+    Dim exportSheet As Worksheet
+    Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    Dim exportRow As Long: exportRow = 1
+
+    Dim item As Variant
+    For Each item In exportData
+        exportSheet.Cells(exportRow, 1).Resize(1, 5).Value = item
+        exportRow = exportRow + 1
+    Next item
+
+    Application.ScreenUpdating = True
+    'Application.Calculation = xlCalculationAutomatic
+    'Application.EnableEvents = True
+
+    MsgBox "Data processed and exported."
+End Sub
+
+Private Sub ProcessDuplicates(ByRef dict As Object, ByRef data As Variant, ByRef exportData As Collection)
+    Dim key As Variant, idx As Variant
+    For Each key In dict
+        If dict(key).Count > 1 Then
+            For Each idx In dict(key)
+                Dim rowData(1 To 5) As Variant
+                rowData(1) = data(idx, 1)
+                rowData(2) = data(idx, 2)
+                rowData(3) = data(idx, 3)
+                rowData(4) = data(idx, 4)
+                rowData(5) = data(idx, 5)
+                exportData.Add rowData
+            Next idx
+        End If
+    Next key
+End Sub
+
