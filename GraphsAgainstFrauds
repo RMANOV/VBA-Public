@@ -12,9 +12,9 @@ Sub ProcessAndExportData()
     
     ' Read data into an array for fast processing
     Dim dataRange As Range
-    Set dataRange = ws.Range("A2:E" & lastRow)
+    Set dataRange = ws.Range("A2:AR" & lastRow)
     Dim data As Variant
-    data = dataRange.Value
+    data = dataRange.Value2
 
     Dim exportData As Collection
     Set exportData = New Collection
@@ -26,16 +26,16 @@ Sub ProcessAndExportData()
     Dim i As Long
     For i = LBound(data, 1) To UBound(data, 1)
         ' Email
-        If Not emailDict.Exists(data(i, 3)) Then
-            emailDict.Add data(i, 3), New Collection
+        If Not emailDict.Exists(data(i, 13)) Then
+            emailDict.Add data(i, 13), New Collection
         End If
-        emailDict(data(i, 3)).Add i
+        emailDict(data(i, 13)).Add i
 
         ' Phone
-        If Not phoneDict.Exists(data(i, 2)) Then
-            phoneDict.Add data(i, 2), New Collection
+        If Not phoneDict.Exists(data(i, 12)) Then
+            phoneDict.Add data(i, 12), New Collection
         End If
-        phoneDict(data(i, 2)).Add i
+        phoneDict(data(i, 12)).Add i
     Next i
 
     ' Process duplicates for email and phone
@@ -64,7 +64,7 @@ End Sub
 Private Sub ProcessDuplicates(ByRef dict As Object, ByRef data As Variant, ByRef exportData As Collection)
     Dim key As Variant, idx As Variant
     For Each key In dict
-        If dict(key).Count > 1 Then
+        If dict(key).Count >= 3 Then
             For Each idx In dict(key)
                 Dim rowData(1 To 5) As Variant
                 rowData(1) = data(idx, 1)
