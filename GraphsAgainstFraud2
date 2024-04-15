@@ -1,0 +1,116 @@
+Sub ProcessAndExportData()
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(1) ' Assuming the data is in the first sheet
+
+    Dim lastRow As Long
+    'lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row ' Find the last row with data
+    lastRow = ActiveSheet.Cells(ActiveSheet.Rows.Count, "A").End(xlUp).Row
+    
+        ' Read data into an array for fast processing
+    Dim dataRange As Range
+    Set dataRange = ws.Range("A2:AR" & lastRow)
+    Dim data As Variant
+    data = dataRange.Value
+
+    Dim exportData As Collection
+    Set exportData = New Collection
+
+    Dim emailDict As Object, phoneDict As Object
+    Set emailDict = CreateObject("Scripting.Dictionary")
+    Set phoneDict = CreateObject("Scripting.Dictionary")
+
+    Dim i As Long
+    For i = LBound(data, 1) To UBound(data, 1)
+        ' Email
+        If Not emailDict.Exists(data(i, 13)) Then
+            emailDict.Add data(i, 13), New Collection
+        End If
+        emailDict(data(i, 13)).Add i
+
+        ' Phone
+        If Not phoneDict.Exists(data(i, 12)) Then
+            phoneDict.Add data(i, 12), New Collection
+        End If
+        phoneDict(data(i, 12)).Add i
+    Next i
+
+    ' Process duplicates for email and phone
+    ProcessDuplicates emailDict, data, exportData
+    ProcessDuplicates phoneDict, data, exportData
+
+    ' Export suspicious subgraphs to a new sheet
+    Dim exportSheet As Worksheet
+    Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    exportSheet.Name = "Suspicious Subgraphs"
+    
+    Dim exportRow As Long: exportRow = 1
+    exportSheet.Cells(exportRow, 1).Value = "Employee"
+    exportSheet.Cells(exportRow, 2).Value = "Phone"
+    exportSheet.Cells(exportRow, 3).Value = "Email"
+    exportSheet.Cells(exportRow, 4).Value = "Date"
+    exportSheet.Cells(exportRow, 5).Value = "Office"
+    exportRow = exportRow + 1
+
+    Dim item As Variant
+    For Each item In exportData
+        exportSheet.Cells(exportRow, 1).Resize(1, 5).Value = item
+        exportRow = exportRow + 1
+    Next item
+
+    ' Autofit columns in export sheet
+    exportSheet.Columns.AutoFit
+
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.EnableEvents = True
+
+    MsgBox "Data processed and suspicious subgraphs exported."
+End Sub
+
+Private Sub ProcessDuplicates(ByRef dict As Object, ByRef data As Variant, ByRef exportData As Collection)
+    Dim key As Variant, idxColl As Collection
+    For Each key In dict
+        Set idxColl = dict(key)
+        If idxColl.Count > 1 Then
+            ' Check if the duplicates are from different employees or offices
+            Dim employeeDict As Object, officeDict As Object
+            Set employeeDict = CreateObject("Scripting.Dictionary")
+            Set officeDict = CreateObject("Scripting.Dictionary")
+
+            Dim idx As Variant
+            For Each idx In idxColl
+                Dim empKey As String, offKey As String
+                empKey = CStr(data(idx, 11))  ' Employee
+                offKey = CStr(data(idx, 15))  ' Office
+
+                ' Add unique keys to the dictionaries
+                If Not employeeDict.Exists(empKey) Then
+                    employeeDict.Add empKey, Nothing
+                End If
+                If Not officeDict.Exists(offKey) Then
+                    officeDict.Add offKey, Nothing
+                End If
+            Next idx
+
+            If employeeDict.Count >= 3 Or officeDict.Count >= 3 Then
+                ' Suspicious subgraph found, add to export data
+                For Each idx In idxColl
+                    Dim rowData(1 To 5) As Variant
+                    rowData(1) = data(idx, 1)
+                    rowData(2) = data(idx, 2)
+                    rowData(3) = data(idx, 3)
+                    rowData(4) = data(idx, 4)
+                    rowData(5) = data(idx, 5)
+                    exportData.Add rowData
+                Next idx
+            End If
+        End If
+    Next key
+End Sub
+
+
+
