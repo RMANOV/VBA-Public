@@ -1,0 +1,127 @@
+Sub IdentifySuspiciousData()
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
+
+    ' **1. Зареждане на данни**
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(1)
+    Dim lastRow As Long
+    'lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRow = ActiveSheet.Cells(ActiveSheet.Rows.Count, "A").End(xlUp).Row
+    
+    ' Ensure the range includes up to column O
+    Dim dataRange As Range
+    Set dataRange = ws.Range("A2:AR" & lastRow)
+    Dim data As Variant
+    data = dataRange.Value
+
+    ' **2. Създаване на речници**
+    Dim emailDict As Object, phoneDict As Object
+    Set emailDict = CreateObject("Scripting.Dictionary")
+    Set phoneDict = CreateObject("Scripting.Dictionary")
+
+    ' **3. Процесиране на данните**
+    Dim i As Long
+    For i = LBound(data, 1) To UBound(data, 1)
+        ' Use correct column indices
+        If Not emailDict.Exists(data(i, 13)) Then  ' Column M
+            emailDict.Add data(i, 13), New Collection
+        End If
+        emailDict(data(i, 13)).Add data(i, 1) & "|" & data(i, 11) & "|" & data(i, 2) & "|" & data(i, 15) ' A|K|B|O
+
+        If Not phoneDict.Exists(data(i, 12)) Then  ' Column L
+            phoneDict.Add data(i, 12), New Collection
+        End If
+        phoneDict(data(i, 12)).Add data(i, 1) & "|" & data(i, 11) & "|" & data(i, 2) & "|" & data(i, 15) ' A|K|B|O
+    Next i
+
+    ' **4. Идентифициране на подозрителни модели**
+    Dim suspiciousData As Collection
+    Set suspiciousData = New Collection
+    ProcessSuspiciousPatterns emailDict, suspiciousData
+    ProcessSuspiciousPatterns phoneDict, suspiciousData
+
+    ' **5. Експортиране на данни**
+    Dim exportSheet As Worksheet
+    Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    Dim exportRow As Long: exportRow = 1
+
+    ' Print headers based on the columns you mentioned (adjust as necessary)
+    exportSheet.Cells(exportRow, 1).Value = "Employee"
+    exportSheet.Cells(exportRow, 2).Value = "Date"
+    exportSheet.Cells(exportRow, 3).Value = "Office"
+    exportSheet.Cells(exportRow, 4).Value = "Email or Phone"
+    exportRow = exportRow + 1
+
+    ' Print data
+    Dim item As Variant
+    For Each item In suspiciousData
+        exportSheet.Cells(exportRow, 1).Resize(1, 4).Value = item
+        exportRow = exportRow + 1
+    Next item
+
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.EnableEvents = True
+
+    MsgBox "Data processed and exported."
+End Sub
+
+
+Private Sub ProcessSuspiciousPatterns(ByRef dict As Object, ByRef suspiciousData As Collection)
+    Dim key As Variant, indices As Variant
+    For Each key In dict
+        If dict(key).Count >= 3 Then
+            Dim employeeOfficeMap As Object
+            Set employeeOfficeMap = CreateObject("Scripting.Dictionary")
+
+            For Each indices In dict(key)
+                Dim details() As String
+                details = Split(indices, "|")
+
+                Dim employee As String, office As String, dateValue As String
+                employee = LCase(Trim(details(0)))  ' Employee (Column A)
+                dateValue = details(1)               ' Date (Column K)
+                office = details(2)                  ' Office (Column O)
+
+                Dim mapKey As Variant
+                mapKey = employee & "|" & office
+
+                If Not employeeOfficeMap.Exists(mapKey) Then
+                    employeeOfficeMap.Add mapKey, New Collection
+                End If
+                employeeOfficeMap(mapKey).Add dateValue
+            Next indices
+
+            Dim officeMap As Object
+            Set officeMap = CreateObject("Scripting.Dictionary")
+            For Each mapKey In employeeOfficeMap
+                Dim officeDetails As Variant
+                officeDetails = Split(mapKey, "|")(1)
+                If Not officeMap.Exists(officeDetails) Then
+                    officeMap.Add officeDetails, New Collection
+                End If
+                officeMap(officeDetails).Add mapKey
+            Next mapKey
+
+            For Each officeDetails In officeMap
+                If officeMap(officeDetails).Count >= 3 Then
+                    For Each mapKey In officeMap(officeDetails)
+                        For Each indices In dict(key)
+                            Dim rowData(1 To 4) As Variant
+                            details = Split(indices, "|")
+                            rowData(1) = details(0)  ' Employee
+                            rowData(2) = details(1)  ' Date
+                            rowData(3) = details(2)  ' Office
+                            rowData(4) = key         ' Email or Phone
+                            suspiciousData.Add rowData
+                        Next indices
+                    Next mapKey
+                End If
+            Next officeDetails
+        End If
+    Next key
+End Sub
+
+
