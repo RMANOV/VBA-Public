@@ -72,7 +72,7 @@ End Sub
 Private Sub ProcessSuspiciousPatterns(ByRef dict As Object, ByRef suspiciousData As Collection)
     Dim key As Variant, indices As Variant
     For Each key In dict
-        If dict(key).Count >= 3 Then
+        If dict(key).Count >= 3 Then 
             Dim employeeOfficeMap As Object
             Set employeeOfficeMap = CreateObject("Scripting.Dictionary")
 
@@ -105,23 +105,18 @@ Private Sub ProcessSuspiciousPatterns(ByRef dict As Object, ByRef suspiciousData
                 officeMap(officeDetails).Add mapKey
             Next mapKey
 
-            For Each officeDetails In officeMap
-                If officeMap(officeDetails).Count >= 3 Then
-                    For Each mapKey In officeMap(officeDetails)
-                        For Each indices In dict(key)
-                            Dim rowData(1 To 4) As Variant
-                            details = Split(indices, "|")
-                            rowData(1) = details(0)  ' Employee
-                            rowData(2) = details(1)  ' Date
-                            rowData(3) = details(2)  ' Office
-                            rowData(4) = key         ' Email or Phone
-                            suspiciousData.Add rowData
-                        Next indices
-                    Next mapKey
-                End If
-            Next officeDetails
+            For Each indices In dict(key)
+                Dim rowData(1 To 4) As Variant
+                details = Split(indices, "|")
+                rowData(1) = details(0)  ' Employee
+                rowData(2) = details(1)  ' Date
+                rowData(3) = details(2)  ' Office
+                rowData(4) = key         ' Email or Phone
+                suspiciousData.Add rowData
+            Next indices
         End If
     Next key
 End Sub
+
 
 
