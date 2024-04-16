@@ -48,9 +48,9 @@ Sub IdentifySuspiciousData()
     Dim exportRow As Long: exportRow = 1
 
     ' Print headers based on the columns you mentioned (adjust as necessary)
-    exportSheet.Cells(exportRow, 1).Value = "Employee"
-    exportSheet.Cells(exportRow, 2).Value = "Date"
-    exportSheet.Cells(exportRow, 3).Value = "Office"
+    exportSheet.Cells(exportRow, 1).Value = "ID"
+    exportSheet.Cells(exportRow, 2).Value = "Employee"
+    exportSheet.Cells(exportRow, 3).Value = "Date"
     exportSheet.Cells(exportRow, 4).Value = "Email or Phone"
     exportRow = exportRow + 1
 
@@ -108,9 +108,9 @@ Private Sub ProcessSuspiciousPatterns(ByRef dict As Object, ByRef suspiciousData
             For Each indices In dict(key)
                 Dim rowData(1 To 4) As Variant
                 details = Split(indices, "|")
-                rowData(1) = details(0)  ' Employee
-                rowData(2) = details(1)  ' Date
-                rowData(3) = details(2)  ' Office
+                rowData(1) = details(0)  ' ID
+                rowData(2) = details(1)  ' Employee
+                rowData(3) = details(2)  ' Date
                 rowData(4) = key         ' Email or Phone
                 suspiciousData.Add rowData
             Next indices
