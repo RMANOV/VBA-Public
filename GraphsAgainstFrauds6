@@ -1,0 +1,65 @@
+Private Const COL_Employee As Long = 1
+Private Const COL_EMAIL As Long = 2
+Private Const COL_PHONE As Long = 3
+Private Const COL_EGN As Long = 4
+Private Const COL_ID As Long = 5
+
+Private ws As Worksheet
+
+Sub Initialize()
+    Set ws = ThisWorkbook.Sheets("Sheet1")
+End Sub
+
+Sub SuspiciousDataDetection()
+
+Dim startTime As Double
+startTime = Timer
+
+' Initialize dictionaries for tracking
+Dim suspiciousPatterns As Object, employeeAbuse As Object, eSignAbuse As Object
+Set suspiciousPatterns = CreateObject("Scripting.Dictionary")
+Set employeeAbuse = CreateObject("Scripting.Dictionary")
+Set eSignAbuse = CreateObject("Scripting.Dictionary")
+
+Dim row As Long, employeeID As String, personalData As String, eSignature As String
+
+' Pre-fetch the range to minimize calls to the worksheet
+Dim dataRange As Variant
+dataRange = ws.Range(ws.Cells(2, 1), ws.Cells(100000, COL_EGN)).Value
+
+For row = 1 To UBound(dataRange, 1)
+    employeeID = dataRange(row, COL_Employee - 1) ' Adjusted for 0-based array
+    personalData = dataRange(row, COL_EMAIL - 1) & dataRange(row, COL_PHONE - 1) & dataRange(row, COL_EGN - 1)
+    eSignature = dataRange(row, COL_ID - 1) ' Adjusted for 0-based array
+    
+    ' Check for personal data abuse
+    If Not suspiciousPatterns.Exists(personalData) Then
+        suspiciousPatterns.Add personalData, employeeID
+    ElseIf suspiciousPatterns(personalData) <> employeeID Then
+        employeeAbuse(personalData) = employeeAbuse(personalData) + 1
+    End If
+    
+    ' Check for electronic signature abuse
+    eSignAbuse(eSignature) = eSignAbuse(eSignature) + 1
+Next row
+
+' Output results
+Dim key As Variant
+For Each key In employeeAbuse
+    If employeeAbuse(key) > 2 Then
+        MsgBox "Potential abuse detected with personal data: " & key
+    End If
+Next key
+
+For Each key In eSignAbuse
+    If eSignAbuse(key) > 1 Then
+        MsgBox "Potential abuse detected with electronic signatures: " & key
+    End If
+Next key
+
+Dim endTime As Double
+endTime = Timer
+MsgBox "Process completed in " & endTime - startTime & " seconds."
+
+End Sub
+
