@@ -1,0 +1,87 @@
+Const COL_EMAIL As Long = 13 ' Column M for Email
+Const COL_PHONE As Long = 12 ' Column L for Phone
+Const COL_ID As Long = 1     ' Column A for ID
+Const COL_DATE As Long = 2  ' Column K for Date
+Const COL_OFFICE As Long = 15 ' Column O for Office
+Const COL_CLIENT1 As Long = 4 ' Column D for Client Name 1
+Const COL_CLIENT2 As Long = 5 ' Column E for Client Name 2
+Const COL_CLIENT3 As Long = 6 ' Column F for Client Name 3
+Const COL_EGN As Long = 3    ' Column H for EGN
+Const COL_Employee As Long = 11    ' Column H for EGN
+
+
+Sub IdentifySuspiciousData()
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(1)
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.count, "A").End(xlUp).Row
+
+    Dim dataRange As Range
+    Set dataRange = ws.Range("A2:AR" & lastRow)
+    Dim data As Variant
+    data = dataRange.Value
+
+    Dim emailDict As Object, phoneDict As Object
+    Set emailDict = CreateObject("Scripting.Dictionary")
+    Set phoneDict = CreateObject("Scripting.Dictionary")
+
+    Dim i As Long
+    For i = LBound(data, 1) To UBound(data, 1)
+        If Not emailDict.Exists(data(i, COL_EMAIL)) Then
+            emailDict.Add data(i, COL_EMAIL), New Collection
+        End If
+        emailDict(data(i, COL_EMAIL)).Add Array(data(i, COL_ID), data(i, COL_DATE), data(i, COL_OFFICE), data(i, COL_EMAIL), data(i, COL_CLIENT1), data(i, COL_CLIENT2), data(i, COL_CLIENT3), data(i, COL_EGN), data(i, COL_Employee))
+
+        If Not phoneDict.Exists(data(i, COL_PHONE)) Then
+            phoneDict.Add data(i, COL_PHONE), New Collection
+        End If
+        phoneDict(data(i, COL_PHONE)).Add Array(data(i, COL_ID), data(i, COL_DATE), data(i, COL_OFFICE), data(i, COL_PHONE), data(i, COL_CLIENT1), data(i, COL_CLIENT2), data(i, COL_CLIENT3), data(i, COL_EGN), data(i, COL_Employee))
+    Next i
+
+    Dim suspiciousData() As Variant
+    ReDim suspiciousData(1 To 1000000, 1 To 9) ' Adjust size as necessary
+    Dim count As Long: count = 1
+
+    ProcessSuspiciousPatterns emailDict, suspiciousData, count
+    ProcessSuspiciousPatterns phoneDict, suspiciousData, count
+
+    Dim exportSheet As Worksheet
+    Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.count))
+    exportSheet.Range("A1:I1").Value = Array("ID", "Date", "Employee", "Email or Phone", "Office", "Client Name 1", "Client Name 2", "Client Name 3", "EGN")
+    exportSheet.Range("A2").Resize(count - 1, 9).Value = suspiciousData
+
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.EnableEvents = True
+
+    MsgBox "Data processed and exported."
+End Sub
+
+Private Sub ProcessSuspiciousPatterns(ByRef dict As Object, ByRef suspiciousData As Variant, ByRef count As Long)
+    Dim key As Variant
+    For Each key In dict
+        If dict(key).count >= 3 Then
+            For Each indices In dict(key)
+
+                suspiciousData(count, 1) = indices(0) ' ID
+                suspiciousData(count, 2) = indices(1) ' Date
+                suspiciousData(count, 3) = indices(8) ' Employee
+                suspiciousData(count, 4) = key        ' Email or Phone
+                suspiciousData(count, 5) = indices(2) ' Office
+                suspiciousData(count, 6) = indices(4) ' Client Name 1
+                suspiciousData(count, 7) = indices(5) ' Client Name 2
+                suspiciousData(count, 8) = indices(6) ' Client Name 3
+                suspiciousData(count, 9) = indices(7) ' EGN
+                
+                count = count + 1
+            Next indices
+        End If
+    Next key
+End Sub
+
+
+
