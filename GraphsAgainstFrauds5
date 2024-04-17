@@ -1,0 +1,183 @@
+Const COL_EMAIL As Long = 13 ' Column M for Email
+Const COL_PHONE As Long = 12 ' Column L for Phone
+Const COL_ID As Long = 1     ' Column A for ID
+Const COL_DATE As Long = 2  ' Column K for Date
+Const COL_OFFICE As Long = 15 ' Column O for Office
+Const COL_CLIENT1 As Long = 4 ' Column D for Client Name 1
+Const COL_CLIENT2 As Long = 5 ' Column E for Client Name 2
+Const COL_CLIENT3 As Long = 6 ' Column F for Client Name 3
+Const COL_EGN As Long = 3    ' Column H for EGN
+Const COL_Employee As Long = 11    ' Column J for Employee
+
+Sub IdentifySuspiciousData()
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(1)
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.count, "A").End(xlUp).Row
+
+    Dim dataRange As Range
+    Set dataRange = ws.Range("A2:AR" & lastRow)
+    Dim data As Variant
+    data = dataRange.Value
+
+    Dim contactDict As Object
+    Set contactDict = CreateObject("Scripting.Dictionary")
+
+    Dim i As Long
+    For i = LBound(data, 1) To UBound(data, 1)
+        Dim contactKey As String
+        contactKey = data(i, COL_EMAIL) & "|" & data(i, COL_PHONE)
+        If Not contactDict.Exists(contactKey) Then
+            contactDict.Add contactKey, New Collection
+        End If
+        contactDict(contactKey).Add i
+    Next i
+
+    Dim suspiciousData As Collection
+    Set suspiciousData = New Collection
+
+    ProcessSuspiciousPatterns contactDict, data, suspiciousData
+
+    Dim exportSheet As Worksheet
+    Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.count))
+    exportSheet.Range("A1:I1").Value = Array("ID", "Date", "Employee", "Contact Info", "Office", "Client Name 1", "Client Name 2", "Client Name 3", "EGN")
+    
+    Dim exportRow As Long: exportRow = 2
+    Dim item As Variant
+    For Each item In suspiciousData
+        exportSheet.Cells(exportRow, 1).Resize(1, 9).Value = item
+        exportRow = exportRow + 1
+    Next item
+    
+    exportSheet.Cells.NumberFormat = "@" ' Format as text
+    exportSheet.Columns("A:I").AutoFit  ' Auto-fit columns
+
+    AnalyzeSuspiciousGraph suspiciousData
+    CheckEmployeeMultipleOffices suspiciousData
+
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.EnableEvents = True
+
+    MsgBox "Data processed and exported."
+End Sub
+
+Private Sub ProcessSuspiciousPatterns(ByRef dict As Object, ByRef data As Variant, ByRef suspiciousData As Collection)
+    Dim key As Variant
+    For Each key In dict
+        If dict(key).count >= 3 Then
+            Dim employees As Object, offices As Object
+            Set employees = CreateObject("Scripting.Dictionary")
+            Set offices = CreateObject("Scripting.Dictionary")
+            
+            Dim idx As Variant
+            For Each idx In dict(key)
+                Dim employeeKey As String
+                employeeKey = CStr(data(idx, COL_Employee))
+                Dim officeKey As String
+                officeKey = CStr(data(idx, COL_OFFICE))
+                If Not employees.Exists(employeeKey) Then
+                    employees.Add employeeKey, Nothing
+                End If
+                If Not offices.Exists(officeKey) Then
+                    offices.Add officeKey, Nothing
+                End If
+            Next idx
+            
+            If employees.count > 2 Or offices.count > 2 Then
+                For Each idx In dict(key)
+                    Dim rowData(1 To 9) As Variant
+                    rowData(1) = data(idx, COL_ID)
+                    rowData(2) = data(idx, COL_DATE)
+                    rowData(3) = data(idx, COL_Employee)
+                    rowData(4) = key
+                    rowData(5) = data(idx, COL_OFFICE)
+                    rowData(6) = data(idx, COL_CLIENT1)
+                    rowData(7) = data(idx, COL_CLIENT2) 
+                    rowData(8) = data(idx, COL_CLIENT3)
+                    rowData(9) = data(idx, COL_EGN)
+                    suspiciousData.Add rowData
+                Next idx
+            End If
+        End If
+    Next key
+End Sub
+
+Private Sub AnalyzeSuspiciousGraph(ByRef suspiciousData As Collection)
+    Dim graph As Object
+    Set graph = CreateObject("Scripting.Dictionary")
+    
+    Dim item As Variant
+    For Each item In suspiciousData
+        Dim employee As String: employee = item(3)
+        Dim office As String: office = item(5)
+        Dim contactInfo As String: contactInfo = item(4) ' Assuming this is the key for contact info
+        
+        If Not graph.Exists(contactInfo) Then
+            Set graph(contactInfo) = CreateObject("Scripting.Dictionary")
+        End If
+        
+        If Not graph(contactInfo).Exists(employee) Then
+            graph(contactInfo).Add employee, office
+        Else
+            ' If the employee already exists under this contact info, check for different office
+            If graph(contactInfo)(employee) <> office Then
+                ' This indicates a potential abuse scenario where the same employee is associated with different offices under the same contact info
+                MsgBox "Potential abuse detected for " & employee & " under contact info " & contactInfo & ". Different offices found: " & graph(contactInfo)(employee) & " and " & office
+            End If
+        End If
+    Next item
+    
+    ' Further analysis can be done here, such as identifying specific subgraphs indicating abuse
+    ' For example, if multiple employees are associated with the same contact info and different offices, it could indicate a pattern of abuse
+    ' This would require more complex graph analysis algorithms
+
+    MsgBox "Graph analysis completed."
+
+End Sub
+
+Private Sub CheckEmployeeMultipleOffices(ByRef suspiciousData As Collection)
+    Dim employeeOffices As Object
+    Set employeeOffices = CreateObject("Scripting.Dictionary")
+    
+    Dim item As Variant
+    For Each item In suspiciousData
+        Dim employee As String: employee = item(3)
+        Dim office As String: office = item(5)
+        Dim date As Date: date = CDate(item(2))
+        
+        If Not employeeOffices.Exists(employee) Then
+            Set employeeOffices(employee) = CreateObject("Scripting.Dictionary")
+        End If
+        
+        If Not employeeOffices(employee).Exists(date) Then
+            employeeOffices(employee).Add date, New Collection
+        End If
+        
+        employeeOffices(employee)(date).Add office, Nothing, Nothing, True ' Use a dictionary to ensure uniqueness
+    Next item
+    
+    Dim emp As Variant
+    For Each emp In employeeOffices
+        Dim dt As Variant
+        For Each dt In employeeOffices(emp)
+            If employeeOffices(emp)(dt).Count > 1 Then
+                MsgBox "Employee " & emp & " registered in multiple offices on " & Format(dt, "dd.mm.yyyy") & ": " & Join(CollectionToArray(employeeOffices(emp)(dt)), ", ")
+            End If
+        Next dt
+    Next emp
+End Sub
+
+Private Function CollectionToArray(ByRef coll As Collection) As Variant
+    Dim arr() As Variant
+    ReDim arr(1 To coll.Count)
+    Dim i As Long
+    For i = 1 To coll.Count
+        arr(i) = coll(i)
+    Next i
+    CollectionToArray = arr
+End Function
