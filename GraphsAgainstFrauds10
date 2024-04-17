@@ -1,0 +1,209 @@
+Const COL_EMAIL As Long = 13 ' Column M for Email
+Const COL_PHONE As Long = 12 ' Column L for Phone
+Const COL_ID As Long = 1   ' Column A for ID
+Const COL_DATE As Long = 2 ' Column K for Date
+Const COL_OFFICE As Long = 15 ' Column O for Office
+Const COL_CLIENT1 As Long = 4 ' Column D for Client Name 1
+Const COL_CLIENT2 As Long = 5 ' Column E for Client Name 2
+Const COL_CLIENT3 As Long = 6 ' Column F for Client Name 3
+Const COL_EGN As Long = 3  ' Column H for EGN
+Const COL_Employee As Long = 11  ' Column J for Employee
+
+Sub IdentifySuspiciousData()
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(1)
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    Dim dataRange As Range
+    Set dataRange = ws.Range("A2:AR" & lastRow)
+    Dim data As Variant
+    data = dataRange.Value
+
+    Dim contactDict As Object
+    Set contactDict = CreateObject("Scripting.Dictionary")
+
+    Dim i As Long
+    For i = 1 To UBound(data, 1)
+        Dim contactKey As String
+        contactKey = data(i, COL_EMAIL) & "|" & data(i, COL_PHONE)
+        If Not contactDict.Exists(contactKey) Then
+            contactDict.Add contactKey, New Collection
+        End If
+        contactDict(contactKey).Add i
+    Next i
+
+    Dim suspiciousData As Variant
+    ReDim suspiciousData(1 To 0, 1 To 9)
+
+    Dim suspiciousRowCount As Long
+    suspiciousRowCount = 0
+
+    Dim key As Variant
+    For Each key In contactDict
+        If contactDict(key).Count >= 3 Then
+            Dim employees As Object, offices As Object
+            Set employees = CreateObject("Scripting.Dictionary")
+            Set offices = CreateObject("Scripting.Dictionary")
+
+            Dim idx As Variant
+            For Each idx In contactDict(key)
+                Dim employeeKey As String
+                employeeKey = CStr(data(idx, COL_Employee))
+                Dim officeKey As String
+                officeKey = CStr(data(idx, COL_OFFICE))
+                If Not employees.Exists(employeeKey) Then
+                    employees.Add employeeKey, Nothing
+                End If
+                If Not offices.Exists(officeKey) Then
+                    offices.Add officeKey, Nothing
+                End If
+            Next idx
+
+            If employees.Count > 2 Or offices.Count > 2 Then
+                For Each idx In contactDict(key)
+                    suspiciousRowCount = suspiciousRowCount + 1
+                    ReDim Preserve suspiciousData(1 To suspiciousRowCount, 1 To 9)
+                    suspiciousData(suspiciousRowCount, 1) = data(idx, COL_ID)
+                    suspiciousData(suspiciousRowCount, 2) = data(idx, COL_DATE)
+                    suspiciousData(suspiciousRowCount, 3) = data(idx, COL_Employee)
+                    suspiciousData(suspiciousRowCount, 4) = key
+                    suspiciousData(suspiciousRowCount, 5) = data(idx, COL_OFFICE)
+                    suspiciousData(suspiciousRowCount, 6) = data(idx, COL_CLIENT1)
+                    suspiciousData(suspiciousRowCount, 7) = data(idx, COL_CLIENT2)
+                    suspiciousData(suspiciousRowCount, 8) = data(idx, COL_CLIENT3)
+                    suspiciousData(suspiciousRowCount, 9) = data(idx, COL_EGN)
+                Next idx
+            End If
+        End If
+    Next key
+
+    If suspiciousRowCount > 0 Then
+        Dim exportSheet As Worksheet
+        Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+        exportSheet.Range("A1:I1").Value = Array("ID", "Date", "Employee", "Contact Info", "Office", "Client Name 1", "Client Name 2", "Client Name 3", "EGN")
+        exportSheet.Range("A2").Resize(suspiciousRowCount, 9).Value = suspiciousData
+        exportSheet.Cells.NumberFormat = "@" ' Format as text
+        exportSheet.Columns("A:I").AutoFit ' Auto-fit columns
+    End If
+
+    AnalyzeSuspiciousGraph suspiciousData
+    CheckEmployeeMultipleOffices suspiciousData
+    CheckTransactionFrequency suspiciousData
+    CheckTransactionConcentration suspiciousData
+    CheckDataChanges suspiciousData
+    AnalyzeEmployeeInteractionNetwork suspiciousData ' Call the new function
+
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.EnableEvents = True
+
+    MsgBox "Data processed and exported."
+End Sub
+
+Private Sub AnalyzeSuspiciousGraph(ByRef suspiciousData As Variant)
+    ' Same as before
+End Sub
+
+Private Sub CheckEmployeeMultipleOffices(ByRef suspiciousData As Variant)
+    ' Same as before
+End Sub
+
+Private Sub CheckTransactionFrequency(ByRef suspiciousData As Variant)
+    ' Same as before
+End Sub
+
+Private Sub CheckTransactionConcentration(ByRef suspiciousData As Variant)
+    ' Same as before
+End Sub
+
+Private Sub CheckDataChanges(ByRef suspiciousData As Variant)
+    ' Same as before
+End Sub
+
+Private Sub AnalyzeEmployeeInteractionNetwork(ByRef suspiciousData As Variant)
+    Dim employeeConnections As Object
+    Set employeeConnections = CreateObject("Scripting.Dictionary")
+
+    Dim i As Long
+    For i = 1 To UBound(suspiciousData, 1)
+        Dim employee As String: employee = suspiciousData(i, 3)
+        Dim office As String: office = suspiciousData(i, 5)
+        Dim client1 As String: client1 = suspiciousData(i, 6)
+        Dim client2 As String: client2 = suspiciousData(i, 7)
+        Dim client3 As String: client3 = suspiciousData(i, 8)
+
+        If Not employeeConnections.Exists(employee) Then
+            Set employeeConnections(employee) = CreateObject("Scripting.Dictionary")
+        End If
+
+        If Not employeeConnections(employee).Exists(office) Then
+            employeeConnections(employee).Add office, New Collection
+        End If
+
+        employeeConnections(employee)(office).Add client1, Nothing, Nothing, True
+        employeeConnections(employee)(office).Add client2, Nothing, Nothing, True
+        employeeConnections(employee)(office).Add client3, Nothing, Nothing, True
+    Next i
+
+    Dim networkSheet As Worksheet
+    Set networkSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+    networkSheet.Name = "Employee Interaction Network"
+
+    Dim nodeRow As Long: nodeRow = 1
+    For Each emp In employeeConnections
+        networkSheet.Cells(nodeRow, 1).Value = emp
+        nodeRow = nodeRow + 1
+    Next emp
+
+    Dim edgeRow As Long: edgeRow = 1
+    For Each emp In employeeConnections
+        Dim office As Variant
+        For Each office In employeeConnections(emp)
+            Dim client As Variant
+            For Each client In employeeConnections(emp)(office)
+                networkSheet.Cells(edgeRow, 2).Value = emp
+                networkSheet.Cells(edgeRow, 3).Value = office
+                networkSheet.Cells(edgeRow, 4).Value = client
+                edgeRow = edgeRow + 1
+            Next client
+        Next office
+    Next emp
+
+    networkSheet.Columns("A:D").AutoFit
+    networkSheet.Range("A1:D1").Font.Bold = True
+
+    AnalyzeNetworkGraph networkSheet
+End Sub
+
+Private Sub AnalyzeNetworkGraph(ByRef networkSheet As Worksheet)
+    Dim employeeConnections As Object
+    Set employeeConnections = CreateObject("Scripting.Dictionary")
+
+    Dim row As Long
+    For row = 2 To networkSheet.Cells(Rows.Count, 1).End(xlUp).Row
+        Dim employee As String: employee = networkSheet.Cells(row, 2).Value
+        If Not employeeConnections.Exists(employee) Then
+            employeeConnections(employee) = 1
+        Else
+            employeeConnections(employee) = employeeConnections(employee) + 1
+        End If
+    Next row
+
+    Dim hub As Variant
+    For Each hub In employeeConnections
+        If employeeConnections(hub) > Application.WorksheetFunction.Median(employeeConnections.Items) * 2 Then
+            MsgBox "Potential hub detected: " & hub & " has " & employeeConnections(hub) & " connections."
+        End If
+    Next hub
+
+    ' Add more advanced analysis here
+End Sub
+
+Private Function CollectionToArray(ByRef coll As Collection) As Variant
+    ' Same as before
+End Function
