@@ -52,7 +52,9 @@ Sub IdentifySuspiciousData()
     Dim exportSheet As Worksheet
     Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.count))
     exportSheet.Range("A1:I1").Value = Array("ID", "Date", "Employee", "Email or Phone", "Office", "Client Name 1", "Client Name 2", "Client Name 3", "EGN")
-    exportSheet.Range("A2").Resize(count - 1, 9).Value = suspiciousData
+    exportSheet.Range("A2").Resize(count - 1, 9).Value2 = suspiciousData
+    exportSheet.Cells.NumberFormat = "@" ' Format as text
+    exportSheet.Columns("A:I").AutoFit  ' Auto-fit columns
 
     Application.ScreenUpdating = True
     Application.Calculation = xlCalculationAutomatic
@@ -66,7 +68,7 @@ Private Sub ProcessSuspiciousPatterns(ByRef dict As Object, ByRef suspiciousData
     For Each key In dict
         If dict(key).count >= 3 Then
             For Each indices In dict(key)
-
+            
                 suspiciousData(count, 1) = indices(0) ' ID
                 suspiciousData(count, 2) = indices(1) ' Date
                 suspiciousData(count, 3) = indices(8) ' Employee
