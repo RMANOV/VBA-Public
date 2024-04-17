@@ -1,0 +1,45 @@
+Sub AnalyzeEmployeeInteractions()
+    ' Setup worksheet and determine the last row of data
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("InteractionData") ' Ensure the sheet name matches your data sheet
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    ' Dictionary to hold each employee and their connections
+    Dim interactions As Object
+    Set interactions = CreateObject("Scripting.Dictionary")
+    
+    ' Populate the dictionary with data from the worksheet
+    Dim i As Long
+    For i = 2 To lastRow ' Assuming the first row is the header
+        Dim employee1 As String
+        Dim employee2 As String
+        employee1 = ws.Cells(i, 1).Value ' Assuming employee 1's ID is in the first column
+        employee2 = ws.Cells(i, 2).Value ' Assuming employee 2's ID is in the second column
+
+        ' Add interaction for the first employee
+        If Not interactions.Exists(employee1) Then
+            Set interactions(employee1) = CreateObject("Scripting.Dictionary")
+        End If
+        interactions(employee1).Add employee2, Nothing
+        
+        ' Optionally add reverse interaction for bidirectional relationships
+        If Not interactions.Exists(employee2) Then
+            Set interactions(employee2) = CreateObject("Scripting.Dictionary")
+        End If
+        interactions(employee2).Add employee1, Nothing
+    Next i
+
+    ' Analyze the network to find employees with unusually high number of connections
+    Dim key As Variant, connectedEmployees As Variant
+    For Each key In interactions.Keys
+        Set connectedEmployees = interactions(key)
+        ' Example criterion: flag employees with more than 5 connections
+        If connectedEmployees.Count > 5 Then
+            Debug.Print "Employee ID " & key & " has high connectivity: " & connectedEmployees.Count
+        End If
+    Next key
+    
+    ' Output message to indicate completion
+    MsgBox "Analysis complete."
+End Sub
