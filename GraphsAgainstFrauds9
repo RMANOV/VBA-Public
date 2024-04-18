@@ -1,7 +1,7 @@
 Sub AnalyzeEmployeeInteractions()
     ' Setup worksheet and determine the last row of data
     Dim ws As Worksheet
-    Set ws = ThisWorkbook.Sheets("InteractionData") ' Ensure the sheet name matches your data sheet
+    Set ws = ThisWorkbook.Sheets(1)
     Dim lastRow As Long
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
@@ -13,33 +13,79 @@ Sub AnalyzeEmployeeInteractions()
     Dim i As Long
     For i = 2 To lastRow ' Assuming the first row is the header
         Dim employee1 As String
-        Dim employee2 As String
-        employee1 = ws.Cells(i, 1).Value ' Assuming employee 1's ID is in the first column
-        employee2 = ws.Cells(i, 2).Value ' Assuming employee 2's ID is in the second column
+        Dim office1 As String
+        employee1 = ws.Cells(i, 11).Value ' Assuming employee 1's ID is in the first column
+        office1 = ws.Cells(i, 15).Value ' Assuming employee 2's ID is in the second column
 
         ' Add interaction for the first employee
         If Not interactions.Exists(employee1) Then
             Set interactions(employee1) = CreateObject("Scripting.Dictionary")
         End If
-        interactions(employee1).Add employee2, Nothing
+        ' interactions(employee1).Add office1, Nothing
+        If interactions(employee1).Exists(office1) Then
+            interactions(employee1)(office1) = interactions(employee1)(office1) + 1
+        Else
+            interactions(employee1)(office1) = 1
+        End If
         
         ' Optionally add reverse interaction for bidirectional relationships
-        If Not interactions.Exists(employee2) Then
-            Set interactions(employee2) = CreateObject("Scripting.Dictionary")
+        If Not interactions.Exists(office1) Then
+            Set interactions(office1) = CreateObject("Scripting.Dictionary")
         End If
-        interactions(employee2).Add employee1, Nothing
+        If interactions(office1).Exists(employee1) Then
+            interactions(office1)(employee1) = interactions(office1)(employee1) + 1
+        Else
+            interactions(office1)(employee1) = 1
+        End If
     Next i
 
     ' Analyze the network to find employees with unusually high number of connections
     Dim key As Variant, connectedEmployees As Variant
+    Dim suspiciousEmployees As Object
+    Set suspiciousEmployees = CreateObject("Scripting.Dictionary")
+
     For Each key In interactions.Keys
         Set connectedEmployees = interactions(key)
         ' Example criterion: flag employees with more than 5 connections
-        If connectedEmployees.Count > 5 Then
-            Debug.Print "Employee ID " & key & " has high connectivity: " & connectedEmployees.Count
+        If connectedEmployees.Count > 2 Then
+            suspiciousEmployees.Add key, connectedEmployees
         End If
     Next key
     
+    ' Output the suspicious employees and their connections
+    Dim outputWs As Worksheet
+    ' Create a new worksheet to output the results after current worksheet
+    Set outputWs = ThisWorkbook.Sheets.Add(After:=ws)
+    outputWs.Name = "Suspicious Employees"
+
+    Dim outputRow As Long
+    outputRow = 1
+    outputWs.Cells(outputRow, 1).Value = "Employee ID"
+    outputWs.Cells(outputRow, 2).Value = "Number of connections"
+
+    For Each key In suspiciousEmployees.Keys
+        outputRow = outputRow + 1
+        outputWs.Cells(outputRow, 1).Value = key
+        outputWs.Cells(outputRow, 2).Value = suspiciousEmployees(key).Count
+    Next key
+
+    for each key in suspiciousEmployees.Keys
+        outputRow = outputRow + 1
+        outputWs.Cells(outputRow, 1).Value = key
+        outputWs.Cells(outputRow, 2).Value = "Connected to:"
+        outputRow = outputRow + 1
+        for each connectedEmployee in suspiciousEmployees(key).Keys
+            outputWs.Cells(outputRow, 1).Value = connectedEmployee
+            outputWs.Cells(outputRow, 2).Value = suspiciousEmployees(key)(connectedEmployee)
+            outputRow = outputRow + 1
+        next connectedEmployee
+
+    next key
+
+
+
+
+
     ' Output message to indicate completion
     MsgBox "Analysis complete."
 End Sub
