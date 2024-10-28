@@ -1,0 +1,31 @@
+=LET(
+    text;A2;
+    substrings; TEXTSPLIT(text; {" "; ","; ";"}; FALSE);
+    cleanSubstrings; TRIM(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(substrings; " "; ""); "-"; ""); "("; ""); ")"; ""); "/"; ""); "."; ""); "\"; ""));
+    processSubstring; LAMBDA(s;
+        LET(
+            s_clean; s;
+            s_digits; TEXTJOIN("", TRUE, IF(ISNUMBER(--MID(s_clean; SEQUENCE(LEN(s_clean)); 1)); MID(s_clean; SEQUENCE(LEN(s_clean)); 1); ""));
+            s_with_plus; IF(LEFT(s_clean; 1) = "+"; "+" & s_digits; s_digits);
+            starts_with_0_or_359; OR(LEFT(s_with_plus; 1) = "0"; LEFT(s_with_plus; 4) = "+359");
+            IF(
+                starts_with_0_or_359;
+                LET(
+                    number; s_with_plus;
+                    prefix; IF(LEFT(number; 1) = "0"; "+359"; LEFT(number; 4));
+                    rest; IF(LEFT(number; 1) = "0"; MID(number; 2; LEN(number) - 1); MID(number; 5; LEN(number) - 4));
+                    first_digit; LEFT(rest; 1);
+                    is_valid_first_digit; OR(first_digit = "8"; first_digit = "7"; first_digit = "9");
+                    final_number; prefix & rest;
+                    is_correct_length; LEN(final_number) = 13;
+                    is_numeric; ISNUMBER(VALUE(SUBSTITUTE(final_number; "+"; "")));
+                    IF(AND(is_valid_first_digit; is_correct_length; is_numeric); final_number; "")
+                );
+                ""
+            )
+        )
+    );
+    results; MAP(cleanSubstrings; processSubstring);
+    validResults; FILTER(results; results <> "");
+    IF(COUNTA(validResults) >= 1; INDEX(validResults; 1); "")
+)
