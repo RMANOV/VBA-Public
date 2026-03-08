@@ -1,0 +1,5 @@
+# VBA extensions: Prevent LF normalization — VBE requires CRLF
+*.bas  -text
+*.cls  -text
+*.frm  -text
+*.vb   -text
