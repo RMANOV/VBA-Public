@@ -42,17 +42,17 @@ Sub ProcessAndExportData()
     ProcessDuplicates emailDict, data, exportData
     ProcessDuplicates phoneDict, data, exportData
 
-    ' Export suspicious subgraphs to a new sheet
+    ' Export results to a new sheet
     Dim exportSheet As Worksheet
     Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
-    exportSheet.Name = "Suspicious Subgraphs"
+    exportSheet.Name = "Analysis Results"
     
     Dim exportRow As Long: exportRow = 1
-    exportSheet.Cells(exportRow, 1).Value = "Employee"
+    exportSheet.Cells(exportRow, 1).Value = "Agent"
     exportSheet.Cells(exportRow, 2).Value = "Phone"
     exportSheet.Cells(exportRow, 3).Value = "Email"
     exportSheet.Cells(exportRow, 4).Value = "Date"
-    exportSheet.Cells(exportRow, 5).Value = "Office"
+    exportSheet.Cells(exportRow, 5).Value = "Location"
     exportRow = exportRow + 1
 
     Dim item As Variant
@@ -68,7 +68,7 @@ Sub ProcessAndExportData()
     Application.Calculation = xlCalculationAutomatic
     Application.EnableEvents = True
 
-    MsgBox "Data processed and suspicious subgraphs exported."
+    MsgBox "Data processed and exported."
 End Sub
 
 Private Sub ProcessDuplicates(ByRef dict As Object, ByRef data As Variant, ByRef exportData As Collection)
@@ -76,28 +76,28 @@ Private Sub ProcessDuplicates(ByRef dict As Object, ByRef data As Variant, ByRef
     For Each key In dict
         Set idxColl = dict(key)
         If idxColl.Count > 1 Then
-            ' Check if the duplicates are from different employees or offices
-            Dim employeeDict As Object, officeDict As Object
-            Set employeeDict = CreateObject("Scripting.Dictionary")
-            Set officeDict = CreateObject("Scripting.Dictionary")
+            ' Check if the duplicates are from different agents or locations
+            Dim agentDict As Object, locationDict As Object
+            Set agentDict = CreateObject("Scripting.Dictionary")
+            Set locationDict = CreateObject("Scripting.Dictionary")
 
             Dim idx As Variant
             For Each idx In idxColl
-                Dim empKey As String, offKey As String
-                empKey = CStr(data(idx, 11))  ' Employee
-                offKey = CStr(data(idx, 15))  ' Office
+                Dim agtKey As String, locKey As String
+                agtKey = CStr(data(idx, 11))  ' Agent
+                locKey = CStr(data(idx, 15))  ' Location
 
                 ' Add unique keys to the dictionaries
-                If Not employeeDict.Exists(empKey) Then
-                    employeeDict.Add empKey, Nothing
+                If Not agentDict.Exists(agtKey) Then
+                    agentDict.Add agtKey, Nothing
                 End If
-                If Not officeDict.Exists(offKey) Then
-                    officeDict.Add offKey, Nothing
+                If Not locationDict.Exists(locKey) Then
+                    locationDict.Add locKey, Nothing
                 End If
             Next idx
 
-            If employeeDict.Count >= 3 Or officeDict.Count >= 3 Then
-                ' Suspicious subgraph found, add to export data
+            If agentDict.Count >= 3 Or locationDict.Count >= 3 Then
+                ' Suspicious pattern found, add to export data
                 For Each idx In idxColl
                     Dim rowData(1 To 5) As Variant
                     rowData(1) = data(idx, 1)

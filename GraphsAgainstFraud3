@@ -25,15 +25,15 @@ Sub IdentifySuspiciousData()
     Dim i As Long
     For i = LBound(data, 1) To UBound(data, 1)
         ' Use correct column indices
-        If Not emailDict.Exists(data(i, 13)) Then  ' Column M
+        If Not emailDict.Exists(data(i, 13)) Then
             emailDict.Add data(i, 13), New Collection
         End If
-        emailDict(data(i, 13)).Add data(i, 1) & "|" & data(i, 11) & "|" & data(i, 2) & "|" & data(i, 15) ' A|K|B|O
+        emailDict(data(i, 13)).Add data(i, 1) & "|" & data(i, 11) & "|" & data(i, 2) & "|" & data(i, 15)
 
-        If Not phoneDict.Exists(data(i, 12)) Then  ' Column L
+        If Not phoneDict.Exists(data(i, 12)) Then
             phoneDict.Add data(i, 12), New Collection
         End If
-        phoneDict(data(i, 12)).Add data(i, 1) & "|" & data(i, 11) & "|" & data(i, 2) & "|" & data(i, 15) ' A|K|B|O
+        phoneDict(data(i, 12)).Add data(i, 1) & "|" & data(i, 11) & "|" & data(i, 2) & "|" & data(i, 15)
     Next i
 
     ' **4. Идентифициране на подозрителни модели**
@@ -49,9 +49,9 @@ Sub IdentifySuspiciousData()
 
     ' Print headers based on the columns you mentioned (adjust as necessary)
     exportSheet.Cells(exportRow, 1).Value = "ID"
-    exportSheet.Cells(exportRow, 2).Value = "Employee"
+    exportSheet.Cells(exportRow, 2).Value = "Agent"
     exportSheet.Cells(exportRow, 3).Value = "Date"
-    exportSheet.Cells(exportRow, 4).Value = "Email or Phone"
+    exportSheet.Cells(exportRow, 4).Value = "Contact Info"
     exportRow = exportRow + 1
 
     ' Print data
@@ -73,45 +73,45 @@ Private Sub ProcessSuspiciousPatterns(ByRef dict As Object, ByRef suspiciousData
     Dim key As Variant, indices As Variant
     For Each key In dict
         If dict(key).Count >= 3 Then 
-            Dim employeeOfficeMap As Object
-            Set employeeOfficeMap = CreateObject("Scripting.Dictionary")
+            Dim agentLocationMap As Object
+            Set agentLocationMap = CreateObject("Scripting.Dictionary")
 
             For Each indices In dict(key)
                 Dim details() As String
                 details = Split(indices, "|")
 
-                Dim employee As String, office As String, dateValue As String
-                employee = LCase(Trim(details(0)))  ' Employee (Column A)
-                dateValue = details(1)               ' Date (Column K)
-                office = details(2)                  ' Office (Column O)
+                Dim agent As String, location As String, dateValue As String
+                agent = LCase(Trim(details(0)))  ' Agent
+                dateValue = details(1)            ' Date
+                location = details(2)             ' Location
 
                 Dim mapKey As Variant
-                mapKey = employee & "|" & office
+                mapKey = agent & "|" & location
 
-                If Not employeeOfficeMap.Exists(mapKey) Then
-                    employeeOfficeMap.Add mapKey, New Collection
+                If Not agentLocationMap.Exists(mapKey) Then
+                    agentLocationMap.Add mapKey, New Collection
                 End If
-                employeeOfficeMap(mapKey).Add dateValue
+                agentLocationMap(mapKey).Add dateValue
             Next indices
 
-            Dim officeMap As Object
-            Set officeMap = CreateObject("Scripting.Dictionary")
-            For Each mapKey In employeeOfficeMap
-                Dim officeDetails As Variant
-                officeDetails = Split(mapKey, "|")(1)
-                If Not officeMap.Exists(officeDetails) Then
-                    officeMap.Add officeDetails, New Collection
+            Dim locationMap As Object
+            Set locationMap = CreateObject("Scripting.Dictionary")
+            For Each mapKey In agentLocationMap
+                Dim locationDetails As Variant
+                locationDetails = Split(mapKey, "|")(1)
+                If Not locationMap.Exists(locationDetails) Then
+                    locationMap.Add locationDetails, New Collection
                 End If
-                officeMap(officeDetails).Add mapKey
+                locationMap(locationDetails).Add mapKey
             Next mapKey
 
             For Each indices In dict(key)
                 Dim rowData(1 To 4) As Variant
                 details = Split(indices, "|")
                 rowData(1) = details(0)  ' ID
-                rowData(2) = details(1)  ' Employee
+                rowData(2) = details(1)  ' Agent
                 rowData(3) = details(2)  ' Date
-                rowData(4) = key         ' Email or Phone
+                rowData(4) = key         ' Contact Info
                 suspiciousData.Add rowData
             Next indices
         End If

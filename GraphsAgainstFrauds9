@@ -1,84 +1,84 @@
-Sub AnalyzeEmployeeInteractions()
+Sub AnalyzeAgentInteractions()
     ' Setup worksheet and determine the last row of data
     Dim ws As Worksheet
     Set ws = ThisWorkbook.Sheets(1)
     Dim lastRow As Long
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
-    ' Dictionary to hold each employee and their connections
+    ' Dictionary to hold each agent and their connections
     Dim interactions As Object
     Set interactions = CreateObject("Scripting.Dictionary")
     
     ' Populate the dictionary with data from the worksheet
     Dim i As Long
     For i = 2 To lastRow ' Assuming the first row is the header
-        Dim employee1 As String
-        Dim office1 As String
-        employee1 = ws.Cells(i, 11).Value ' Assuming employee 1's ID is in the first column
-        office1 = ws.Cells(i, 15).Value ' Assuming employee 2's ID is in the second column
+        Dim agent1 As String
+        Dim location1 As String
+        agent1 = ws.Cells(i, 11).Value
+        location1 = ws.Cells(i, 15).Value
 
-        ' Add interaction for the first employee
-        If Not interactions.Exists(employee1) Then
-            Set interactions(employee1) = CreateObject("Scripting.Dictionary")
+        ' Add interaction for the first agent
+        If Not interactions.Exists(agent1) Then
+            Set interactions(agent1) = CreateObject("Scripting.Dictionary")
         End If
-        ' interactions(employee1).Add office1, Nothing
-        If interactions(employee1).Exists(office1) Then
-            interactions(employee1)(office1) = interactions(employee1)(office1) + 1
+        ' interactions(agent1).Add location1, Nothing
+        If interactions(agent1).Exists(location1) Then
+            interactions(agent1)(location1) = interactions(agent1)(location1) + 1
         Else
-            interactions(employee1)(office1) = 1
+            interactions(agent1)(location1) = 1
         End If
-        
+
         ' Optionally add reverse interaction for bidirectional relationships
-        If Not interactions.Exists(office1) Then
-            Set interactions(office1) = CreateObject("Scripting.Dictionary")
+        If Not interactions.Exists(location1) Then
+            Set interactions(location1) = CreateObject("Scripting.Dictionary")
         End If
-        If interactions(office1).Exists(employee1) Then
-            interactions(office1)(employee1) = interactions(office1)(employee1) + 1
+        If interactions(location1).Exists(agent1) Then
+            interactions(location1)(agent1) = interactions(location1)(agent1) + 1
         Else
-            interactions(office1)(employee1) = 1
+            interactions(location1)(agent1) = 1
         End If
     Next i
 
-    ' Analyze the network to find employees with unusually high number of connections
-    Dim key As Variant, connectedEmployees As Variant
-    Dim suspiciousEmployees As Object
-    Set suspiciousEmployees = CreateObject("Scripting.Dictionary")
+    ' Analyze the network to find agents with unusually high number of connections
+    Dim key As Variant, connectedAgents As Variant
+    Dim flaggedAgents As Object
+    Set flaggedAgents = CreateObject("Scripting.Dictionary")
 
     For Each key In interactions.Keys
-        Set connectedEmployees = interactions(key)
-        ' Example criterion: flag employees with more than 5 connections
-        If connectedEmployees.Count > 2 Then
-            suspiciousEmployees.Add key, connectedEmployees
+        Set connectedAgents = interactions(key)
+        ' Example criterion: flag agents with more than 5 connections
+        If connectedAgents.Count > 2 Then
+            flaggedAgents.Add key, connectedAgents
         End If
     Next key
-    
-    ' Output the suspicious employees and their connections
+
+    ' Output the flagged agents and their connections
     Dim outputWs As Worksheet
     ' Create a new worksheet to output the results after current worksheet
     Set outputWs = ThisWorkbook.Sheets.Add(After:=ws)
-    outputWs.Name = "Suspicious Employees"
+    outputWs.Name = "Flagged Agents"
 
     Dim outputRow As Long
     outputRow = 1
-    outputWs.Cells(outputRow, 1).Value = "Employee ID"
+    outputWs.Cells(outputRow, 1).Value = "Agent ID"
     outputWs.Cells(outputRow, 2).Value = "Number of connections"
 
-    For Each key In suspiciousEmployees.Keys
+    For Each key In flaggedAgents.Keys
         outputRow = outputRow + 1
         outputWs.Cells(outputRow, 1).Value = key
-        outputWs.Cells(outputRow, 2).Value = suspiciousEmployees(key).Count
+        outputWs.Cells(outputRow, 2).Value = flaggedAgents(key).Count
     Next key
 
-    for each key in suspiciousEmployees.Keys
+    for each key in flaggedAgents.Keys
         outputRow = outputRow + 1
         outputWs.Cells(outputRow, 1).Value = key
         outputWs.Cells(outputRow, 2).Value = "Connected to:"
         outputRow = outputRow + 1
-        for each connectedEmployee in suspiciousEmployees(key).Keys
-            outputWs.Cells(outputRow, 1).Value = connectedEmployee
-            outputWs.Cells(outputRow, 2).Value = suspiciousEmployees(key)(connectedEmployee)
+        for each connectedAgent in flaggedAgents(key).Keys
+            outputWs.Cells(outputRow, 1).Value = connectedAgent
+            outputWs.Cells(outputRow, 2).Value = flaggedAgents(key)(connectedAgent)
             outputRow = outputRow + 1
-        next connectedEmployee
+        next connectedAgent
 
     next key
 

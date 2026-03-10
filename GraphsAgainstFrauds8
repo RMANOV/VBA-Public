@@ -1,13 +1,13 @@
-Const COL_EMAIL As Long = 13 ' Column M for Email
-Const COL_PHONE As Long = 12 ' Column L for Phone
-Const COL_ID As Long = 1   ' Column A for ID
-Const COL_DATE As Long = 2 ' Column K for Date
-Const COL_OFFICE As Long = 15 ' Column O for Office
-Const COL_CLIENT1 As Long = 4 ' Column D for Client Name 1
-Const COL_CLIENT2 As Long = 5 ' Column E for Client Name 2
-Const COL_CLIENT3 As Long = 6 ' Column F for Client Name 3
-Const COL_EGN As Long = 3  ' Column H for EGN
-Const COL_Employee As Long = 11  ' Column J for Employee
+Const COL_CONTACT_A As Long = 13
+Const COL_CONTACT_B As Long = 12
+Const COL_REF As Long = 1
+Const COL_TIMESTAMP As Long = 2
+Const COL_LOCATION As Long = 15
+Const COL_ENTITY1 As Long = 4
+Const COL_ENTITY2 As Long = 5
+Const COL_ENTITY3 As Long = 6
+Const COL_PID As Long = 3
+Const COL_AGENT As Long = 11
 
 Sub IdentifySuspiciousData()
     Application.ScreenUpdating = False
@@ -30,7 +30,7 @@ Sub IdentifySuspiciousData()
     Dim i As Long
     For i = 1 To UBound(data, 1)
         Dim contactKey As String
-        contactKey = data(i, COL_EMAIL) & "|" & data(i, COL_PHONE)
+        contactKey = data(i, COL_CONTACT_A) & "|" & data(i, COL_CONTACT_B)
         If Not contactDict.Exists(contactKey) Then
             contactDict.Add contactKey, New Collection
         End If
@@ -46,37 +46,37 @@ Sub IdentifySuspiciousData()
     Dim key As Variant
     For Each key In contactDict
         If contactDict(key).Count >= 3 Then
-            Dim employees As Object, offices As Object
-            Set employees = CreateObject("Scripting.Dictionary")
-            Set offices = CreateObject("Scripting.Dictionary")
+            Dim agents As Object, locations As Object
+            Set agents = CreateObject("Scripting.Dictionary")
+            Set locations = CreateObject("Scripting.Dictionary")
 
             Dim idx As Variant
             For Each idx In contactDict(key)
-                Dim employeeKey As String
-                employeeKey = CStr(data(idx, COL_Employee))
-                Dim officeKey As String
-                officeKey = CStr(data(idx, COL_OFFICE))
-                If Not employees.Exists(employeeKey) Then
-                    employees.Add employeeKey, Nothing
+                Dim agentKey As String
+                agentKey = CStr(data(idx, COL_AGENT))
+                Dim locationKey As String
+                locationKey = CStr(data(idx, COL_LOCATION))
+                If Not agents.Exists(agentKey) Then
+                    agents.Add agentKey, Nothing
                 End If
-                If Not offices.Exists(officeKey) Then
-                    offices.Add officeKey, Nothing
+                If Not locations.Exists(locationKey) Then
+                    locations.Add locationKey, Nothing
                 End If
             Next idx
 
-            If employees.Count > 2 Or offices.Count > 2 Then
+            If agents.Count > 2 Or locations.Count > 2 Then
                 For Each idx In contactDict(key)
                     suspiciousRowCount = suspiciousRowCount + 1
                     ReDim Preserve suspiciousData(1 To suspiciousRowCount, 1 To 9)
-                    suspiciousData(suspiciousRowCount, 1) = data(idx, COL_ID)
-                    suspiciousData(suspiciousRowCount, 2) = data(idx, COL_DATE)
-                    suspiciousData(suspiciousRowCount, 3) = data(idx, COL_Employee)
+                    suspiciousData(suspiciousRowCount, 1) = data(idx, COL_REF)
+                    suspiciousData(suspiciousRowCount, 2) = data(idx, COL_TIMESTAMP)
+                    suspiciousData(suspiciousRowCount, 3) = data(idx, COL_AGENT)
                     suspiciousData(suspiciousRowCount, 4) = key
-                    suspiciousData(suspiciousRowCount, 5) = data(idx, COL_OFFICE)
-                    suspiciousData(suspiciousRowCount, 6) = data(idx, COL_CLIENT1)
-                    suspiciousData(suspiciousRowCount, 7) = data(idx, COL_CLIENT2)
-                    suspiciousData(suspiciousRowCount, 8) = data(idx, COL_CLIENT3)
-                    suspiciousData(suspiciousRowCount, 9) = data(idx, COL_EGN)
+                    suspiciousData(suspiciousRowCount, 5) = data(idx, COL_LOCATION)
+                    suspiciousData(suspiciousRowCount, 6) = data(idx, COL_ENTITY1)
+                    suspiciousData(suspiciousRowCount, 7) = data(idx, COL_ENTITY2)
+                    suspiciousData(suspiciousRowCount, 8) = data(idx, COL_ENTITY3)
+                    suspiciousData(suspiciousRowCount, 9) = data(idx, COL_PID)
                 Next idx
             End If
         End If
@@ -85,14 +85,14 @@ Sub IdentifySuspiciousData()
     If suspiciousRowCount > 0 Then
         Dim exportSheet As Worksheet
         Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
-        exportSheet.Range("A1:I1").Value = Array("ID", "Date", "Employee", "Contact Info", "Office", "Client Name 1", "Client Name 2", "Client Name 3", "EGN")
+        exportSheet.Range("A1:I1").Value = Array("ID", "Date", "Agent", "Contact Info", "Location", "Entity 1", "Entity 2", "Entity 3", "PID")
         exportSheet.Range("A2").Resize(suspiciousRowCount, 9).Value = suspiciousData
         exportSheet.Cells.NumberFormat = "@" ' Format as text
         exportSheet.Columns("A:I").AutoFit ' Auto-fit columns
     End If
 
     AnalyzeSuspiciousGraph suspiciousData
-    CheckEmployeeMultipleOffices suspiciousData
+    CheckAgentMultipleLocations suspiciousData
     CheckTransactionFrequency suspiciousData
     CheckTransactionConcentration suspiciousData
     CheckDataChanges suspiciousData
@@ -110,153 +110,153 @@ Private Sub AnalyzeSuspiciousGraph(ByRef suspiciousData As Variant)
 
     Dim i As Long
     For i = 1 To UBound(suspiciousData, 1)
-        Dim employee As String: employee = suspiciousData(i, 3)
-        Dim office As String: office = suspiciousData(i, 5)
-        Dim contactInfo As String: contactInfo = suspiciousData(i, 4) ' Assuming this is the key for contact info
+        Dim agent As String: agent = suspiciousData(i, 3)
+        Dim location As String: location = suspiciousData(i, 5)
+        Dim contactInfo As String: contactInfo = suspiciousData(i, 4) ' Key for contact info
 
         If Not graph.Exists(contactInfo) Then
             Set graph(contactInfo) = CreateObject("Scripting.Dictionary")
         End If
 
-        If Not graph(contactInfo).Exists(employee) Then
-            graph(contactInfo).Add employee, office
+        If Not graph(contactInfo).Exists(agent) Then
+            graph(contactInfo).Add agent, location
         Else
-            ' If the employee already exists under this contact info, check for different office
-            If graph(contactInfo)(employee) <> office Then
-                ' This indicates a potential abuse scenario where the same employee is associated with different offices under the same contact info
-                MsgBox "Potential abuse detected for " & employee & " under contact info " & contactInfo & ". Different offices found: " & graph(contactInfo)(employee) & " and " & office
+            ' If the agent already exists under this contact info, check for different location
+            If graph(contactInfo)(agent) <> location Then
+                ' This indicates a potential abuse scenario where the same agent is associated with different locations under the same contact info
+                MsgBox "Potential abuse detected for " & agent & " under contact info " & contactInfo & ". Different locations found: " & graph(contactInfo)(agent) & " and " & location
             End If
         End If
     Next i
 
     ' Further analysis can be done here, such as identifying specific subgraphs indicating abuse
-    ' For example, if multiple employees are associated with the same contact info and different offices, it could indicate a pattern of abuse
+    ' For example, if multiple agents are associated with the same contact info and different locations, it could indicate a pattern of abuse
     ' This would require more complex graph analysis algorithms
 
     MsgBox "Graph analysis completed."
 End Sub
 
-Private Sub CheckEmployeeMultipleOffices(ByRef suspiciousData As Variant)
-    Dim employeeOffices As Object
-    Set employeeOffices = CreateObject("Scripting.Dictionary")
+Private Sub CheckAgentMultipleLocations(ByRef suspiciousData As Variant)
+    Dim agentLocations As Object
+    Set agentLocations = CreateObject("Scripting.Dictionary")
 
     Dim i As Long
     For i = 1 To UBound(suspiciousData, 1)
-        Dim employee As String: employee = suspiciousData(i, 3)
-        Dim office As String: office = suspiciousData(i, 5)
+        Dim agent As String: agent = suspiciousData(i, 3)
+        Dim location As String: location = suspiciousData(i, 5)
         Dim date As Date: date = CDate(suspiciousData(i, 2))
 
-        If Not employeeOffices.Exists(employee) Then
-            Set employeeOffices(employee) = CreateObject("Scripting.Dictionary")
+        If Not agentLocations.Exists(agent) Then
+            Set agentLocations(agent) = CreateObject("Scripting.Dictionary")
         End If
 
-        If Not employeeOffices(employee).Exists(date) Then
-            employeeOffices(employee).Add date, New Collection
+        If Not agentLocations(agent).Exists(date) Then
+            agentLocations(agent).Add date, New Collection
         End If
 
-        employeeOffices(employee)(date).Add office, Nothing, Nothing, True ' Use a dictionary to ensure uniqueness
+        agentLocations(agent)(date).Add location, Nothing, Nothing, True ' Use a dictionary to ensure uniqueness
     Next i
 
-    Dim emp As Variant
-    For Each emp In employeeOffices
+    Dim agt As Variant
+    For Each agt In agentLocations
         Dim dt As Variant
-        For Each dt In employeeOffices(emp)
-            If employeeOffices(emp)(dt).Count > 1 Then
-                MsgBox "Employee " & emp & " registered in multiple offices on " & Format(dt, "dd.mm.yyyy") & ": " & Join(CollectionToArray(employeeOffices(emp)(dt)), ", ")
+        For Each dt In agentLocations(agt)
+            If agentLocations(agt)(dt).Count > 1 Then
+                MsgBox "Agent " & agt & " registered in multiple locations on " & Format(dt, "dd.mm.yyyy") & ": " & Join(CollectionToArray(agentLocations(agt)(dt)), ", ")
             End If
         Next dt
-    Next emp
+    Next agt
 End Sub
 
 Private Sub CheckTransactionFrequency(ByRef suspiciousData As Variant)
-    Dim transactionsByEmployee As Object
-    Set transactionsByEmployee = CreateObject("Scripting.Dictionary")
+    Dim transactionsByAgent As Object
+    Set transactionsByAgent = CreateObject("Scripting.Dictionary")
 
     Dim i As Long
     For i = 1 To UBound(suspiciousData, 1)
-        Dim employee As String: employee = suspiciousData(i, 3)
+        Dim agent As String: agent = suspiciousData(i, 3)
         Dim date As Date: date = CDate(suspiciousData(i, 2))
 
-        If Not transactionsByEmployee.Exists(employee) Then
-            Set transactionsByEmployee(employee) = CreateObject("Scripting.Dictionary")
+        If Not transactionsByAgent.Exists(agent) Then
+            Set transactionsByAgent(agent) = CreateObject("Scripting.Dictionary")
         End If
 
-        If Not transactionsByEmployee(employee).Exists(date) Then
-            transactionsByEmployee(employee).Add date, 1
+        If Not transactionsByAgent(agent).Exists(date) Then
+            transactionsByAgent(agent).Add date, 1
         Else
-            transactionsByEmployee(employee)(date) = transactionsByEmployee(employee)(date) + 1
+            transactionsByAgent(agent)(date) = transactionsByAgent(agent)(date) + 1
         End If
     Next i
 
-    Dim emp As Variant
-    For Each emp In transactionsByEmployee
+    Dim agt As Variant
+    For Each agt In transactionsByAgent
         Dim maxTransactions As Long: maxTransactions = 0
         Dim maxDate As Date
         Dim dt As Variant
-        For Each dt In transactionsByEmployee(emp)
-            If WeekDay(dt) > 5 And transactionsByEmployee(emp)(dt) > maxTransactions Then
-                maxTransactions = transactionsByEmployee(emp)(dt)
+        For Each dt In transactionsByAgent(agt)
+            If WeekDay(dt) > 5 And transactionsByAgent(agt)(dt) > maxTransactions Then
+                maxTransactions = transactionsByAgent(agt)(dt)
                 maxDate = dt
             End If
         Next dt
 
         If maxTransactions > 0 Then
-            MsgBox "Employee " & emp & " had an unusually high number (" & maxTransactions & ") of transactions on " & Format(maxDate, "dd.mm.yyyy") & " (a non-working day)."
+            MsgBox "Agent " & agt & " had an unusually high number (" & maxTransactions & ") of transactions on " & Format(maxDate, "dd.mm.yyyy") & " (a non-working day)."
         End If
-    Next emp
+    Next agt
 End Sub
 
 Private Sub CheckTransactionConcentration(ByRef suspiciousData As Variant)
-    Dim transactionsByOffice As Object
-    Set transactionsByOffice = CreateObject("Scripting.Dictionary")
-    Dim transactionsByClient As Object
-    Set transactionsByClient = CreateObject("Scripting.Dictionary")
+    Dim transactionsByLocation As Object
+    Set transactionsByLocation = CreateObject("Scripting.Dictionary")
+    Dim transactionsByEntity As Object
+    Set transactionsByEntity = CreateObject("Scripting.Dictionary")
 
     Dim i As Long
     For i = 1 To UBound(suspiciousData, 1)
-        Dim office As String: office = suspiciousData(i, 5)
-        Dim client1 As String: client1 = suspiciousData(i, 6)
-        Dim client2 As String: client2 = suspiciousData(i, 7)
-        Dim client3 As String: client3 = suspiciousData(i, 8)
+        Dim location As String: location = suspiciousData(i, 5)
+        Dim entity1 As String: entity1 = suspiciousData(i, 6)
+        Dim entity2 As String: entity2 = suspiciousData(i, 7)
+        Dim entity3 As String: entity3 = suspiciousData(i, 8)
 
-        If Not transactionsByOffice.Exists(office) Then
-            transactionsByOffice(office) = 1
+        If Not transactionsByLocation.Exists(location) Then
+            transactionsByLocation(location) = 1
         Else
-            transactionsByOffice(office) = transactionsByOffice(office) + 1
+            transactionsByLocation(location) = transactionsByLocation(location) + 1
         End If
 
-        If Not transactionsByClient.Exists(client1) Then
-            transactionsByClient(client1) = 1
+        If Not transactionsByEntity.Exists(entity1) Then
+            transactionsByEntity(entity1) = 1
         Else
-            transactionsByClient(client1) = transactionsByClient(client1) + 1
+            transactionsByEntity(entity1) = transactionsByEntity(entity1) + 1
         End If
 
-        If Not transactionsByClient.Exists(client2) Then
-            transactionsByClient(client2) = 1
+        If Not transactionsByEntity.Exists(entity2) Then
+            transactionsByEntity(entity2) = 1
         Else
-            transactionsByClient(client2) = transactionsByClient(client2) + 1
+            transactionsByEntity(entity2) = transactionsByEntity(entity2) + 1
         End If
 
-        If Not transactionsByClient.Exists(client3) Then
-            transactionsByClient(client3) = 1
+        If Not transactionsByEntity.Exists(entity3) Then
+            transactionsByEntity(entity3) = 1
         Else
-            transactionsByClient(client3) = transactionsByClient(client3) + 1
+            transactionsByEntity(entity3) = transactionsByEntity(entity3) + 1
         End If
     Next i
 
-    Dim office As Variant
-    For Each office In transactionsByOffice
-        If transactionsByOffice(office) > Application.WorksheetFunction.Median(transactionsByOffice.Items) * 2 Then
-            MsgBox "Office " & office & " has an unusually high number of transactions: " & transactionsByOffice(office)
+    Dim loc As Variant
+    For Each loc In transactionsByLocation
+        If transactionsByLocation(loc) > Application.WorksheetFunction.Median(transactionsByLocation.Items) * 2 Then
+            MsgBox "Location " & loc & " has an unusually high number of transactions: " & transactionsByLocation(loc)
         End If
-    Next office
+    Next loc
 
-    Dim client As Variant
-    For Each client In transactionsByClient
-        If transactionsByClient(client) > Application.WorksheetFunction.Median(transactionsByClient.Items) * 2 Then
-            MsgBox "Client " & client & " has an unusually high number of transactions: " & transactionsByClient(client)
+    Dim ent As Variant
+    For Each ent In transactionsByEntity
+        If transactionsByEntity(ent) > Application.WorksheetFunction.Median(transactionsByEntity.Items) * 2 Then
+            MsgBox "Entity " & ent & " has an unusually high number of transactions: " & transactionsByEntity(ent)
         End If
-    Next client
+    Next ent
 End Sub
 
 Private Sub CheckDataChanges(ByRef suspiciousData As Variant)
@@ -266,30 +266,30 @@ Private Sub CheckDataChanges(ByRef suspiciousData As Variant)
     Dim i As Long
     For i = 1 To UBound(suspiciousData, 1)
         Dim id As Long: id = suspiciousData(i, 1)
-        Dim employee As String: employee = suspiciousData(i, 3)
-        Dim client1 As String: client1 = suspiciousData(i, 6)
-        Dim client2 As String: client2 = suspiciousData(i, 7)
-        Dim client3 As String: client3 = suspiciousData(i, 8)
-        Dim egn As String: egn = suspiciousData(i, 9)
+        Dim agent As String: agent = suspiciousData(i, 3)
+        Dim entity1 As String: entity1 = suspiciousData(i, 6)
+        Dim entity2 As String: entity2 = suspiciousData(i, 7)
+        Dim entity3 As String: entity3 = suspiciousData(i, 8)
+        Dim pid As String: pid = suspiciousData(i, 9)
 
-        Dim key As String: key = id & "|" & employee & "|" & client1 & "|" & client2 & "|" & client3 & "|" & egn
+        Dim key As String: key = id & "|" & agent & "|" & entity1 & "|" & entity2 & "|" & entity3 & "|" & pid
         If Not previousData.Exists(key) Then
-            previousData(key) = Array(id, employee, client1, client2, client3, egn)
+            previousData(key) = Array(id, agent, entity1, entity2, entity3, pid)
         Else
             Dim prevId As Long: prevId = previousData(key)(0)
-            Dim prevEmployee As String: prevEmployee = previousData(key)(1)
-            Dim prevClient1 As String: prevClient1 = previousData(key)(2)
-            Dim prevClient2 As String: prevClient2 = previousData(key)(3)
-            Dim prevClient3 As String: prevClient3 = previousData(key)(4)
-            Dim prevEgn As String: prevEgn = previousData(key)(5)
+            Dim prevAgent As String: prevAgent = previousData(key)(1)
+            Dim prevEntity1 As String: prevEntity1 = previousData(key)(2)
+            Dim prevEntity2 As String: prevEntity2 = previousData(key)(3)
+            Dim prevEntity3 As String: prevEntity3 = previousData(key)(4)
+            Dim prevPid As String: prevPid = previousData(key)(5)
 
-            If id <> prevId Or employee <> prevEmployee Or client1 <> prevClient1 Or client2 <> prevClient2 Or client3 <> prevClient3 Or egn <> prevEgn Then
+            If id <> prevId Or agent <> prevAgent Or entity1 <> prevEntity1 Or entity2 <> prevEntity2 Or entity3 <> prevEntity3 Or pid <> prevPid Then
                 MsgBox "Potential data change detected for ID " & id & ":" & vbNewLine & _
-                       "Employee: " & prevEmployee & " -> " & employee & vbNewLine & _
-                       "Client 1: " & prevClient1 & " -> " & client1 & vbNewLine & _
-                       "Client 2: " & prevClient2 & " -> " & client2 & vbNewLine & _
-                       "Client 3: " & prevClient3 & " -> " & client3 & vbNewLine & _
-                       "EGN: " & prevEgn & " -> " & egn
+                       "Agent: " & prevAgent & " -> " & agent & vbNewLine & _
+                       "Entity 1: " & prevEntity1 & " -> " & entity1 & vbNewLine & _
+                       "Entity 2: " & prevEntity2 & " -> " & entity2 & vbNewLine & _
+                       "Entity 3: " & prevEntity3 & " -> " & entity3 & vbNewLine & _
+                       "PID: " & prevPid & " -> " & pid
             End If
         End If
     Next i

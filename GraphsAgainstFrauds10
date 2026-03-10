@@ -1,13 +1,13 @@
-Const COL_EMAIL As Long = 13 ' Column M for Email
-Const COL_PHONE As Long = 12 ' Column L for Phone
-Const COL_ID As Long = 1   ' Column A for ID
-Const COL_DATE As Long = 2 ' Column K for Date
-Const COL_OFFICE As Long = 15 ' Column O for Office
-Const COL_CLIENT1 As Long = 4 ' Column D for Client Name 1
-Const COL_CLIENT2 As Long = 5 ' Column E for Client Name 2
-Const COL_CLIENT3 As Long = 6 ' Column F for Client Name 3
-Const COL_EGN As Long = 3  ' Column H for EGN
-Const COL_Employee As Long = 11  ' Column J for Employee
+Const COL_CONTACT_A As Long = 13
+Const COL_CONTACT_B As Long = 12
+Const COL_REF As Long = 1
+Const COL_TIMESTAMP As Long = 2
+Const COL_LOCATION As Long = 15
+Const COL_ENTITY1 As Long = 4
+Const COL_ENTITY2 As Long = 5
+Const COL_ENTITY3 As Long = 6
+Const COL_PID As Long = 3
+Const COL_AGENT As Long = 11
 
 Sub IdentifySuspiciousData()
     Application.ScreenUpdating = False
@@ -30,7 +30,7 @@ Sub IdentifySuspiciousData()
     Dim i As Long
     For i = 1 To UBound(data, 1)
         Dim contactKey As String
-        contactKey = data(i, COL_EMAIL) & "|" & data(i, COL_PHONE)
+        contactKey = data(i, COL_CONTACT_A) & "|" & data(i, COL_CONTACT_B)
         If Not contactDict.Exists(contactKey) Then
             contactDict.Add contactKey, New Collection
         End If
@@ -46,37 +46,37 @@ Sub IdentifySuspiciousData()
     Dim key As Variant
     For Each key In contactDict
         If contactDict(key).Count >= 3 Then
-            Dim employees As Object, offices As Object
-            Set employees = CreateObject("Scripting.Dictionary")
-            Set offices = CreateObject("Scripting.Dictionary")
+            Dim agents As Object, locations As Object
+            Set agents = CreateObject("Scripting.Dictionary")
+            Set locations = CreateObject("Scripting.Dictionary")
 
             Dim idx As Variant
             For Each idx In contactDict(key)
-                Dim employeeKey As String
-                employeeKey = CStr(data(idx, COL_Employee))
-                Dim officeKey As String
-                officeKey = CStr(data(idx, COL_OFFICE))
-                If Not employees.Exists(employeeKey) Then
-                    employees.Add employeeKey, Nothing
+                Dim agentKey As String
+                agentKey = CStr(data(idx, COL_AGENT))
+                Dim locationKey As String
+                locationKey = CStr(data(idx, COL_LOCATION))
+                If Not agents.Exists(agentKey) Then
+                    agents.Add agentKey, Nothing
                 End If
-                If Not offices.Exists(officeKey) Then
-                    offices.Add officeKey, Nothing
+                If Not locations.Exists(locationKey) Then
+                    locations.Add locationKey, Nothing
                 End If
             Next idx
 
-            If employees.Count > 2 Or offices.Count > 2 Then
+            If agents.Count > 2 Or locations.Count > 2 Then
                 For Each idx In contactDict(key)
                     suspiciousRowCount = suspiciousRowCount + 1
                     ReDim Preserve suspiciousData(1 To suspiciousRowCount, 1 To 9)
-                    suspiciousData(suspiciousRowCount, 1) = data(idx, COL_ID)
-                    suspiciousData(suspiciousRowCount, 2) = data(idx, COL_DATE)
-                    suspiciousData(suspiciousRowCount, 3) = data(idx, COL_Employee)
+                    suspiciousData(suspiciousRowCount, 1) = data(idx, COL_REF)
+                    suspiciousData(suspiciousRowCount, 2) = data(idx, COL_TIMESTAMP)
+                    suspiciousData(suspiciousRowCount, 3) = data(idx, COL_AGENT)
                     suspiciousData(suspiciousRowCount, 4) = key
-                    suspiciousData(suspiciousRowCount, 5) = data(idx, COL_OFFICE)
-                    suspiciousData(suspiciousRowCount, 6) = data(idx, COL_CLIENT1)
-                    suspiciousData(suspiciousRowCount, 7) = data(idx, COL_CLIENT2)
-                    suspiciousData(suspiciousRowCount, 8) = data(idx, COL_CLIENT3)
-                    suspiciousData(suspiciousRowCount, 9) = data(idx, COL_EGN)
+                    suspiciousData(suspiciousRowCount, 5) = data(idx, COL_LOCATION)
+                    suspiciousData(suspiciousRowCount, 6) = data(idx, COL_ENTITY1)
+                    suspiciousData(suspiciousRowCount, 7) = data(idx, COL_ENTITY2)
+                    suspiciousData(suspiciousRowCount, 8) = data(idx, COL_ENTITY3)
+                    suspiciousData(suspiciousRowCount, 9) = data(idx, COL_PID)
                 Next idx
             End If
         End If
@@ -85,18 +85,18 @@ Sub IdentifySuspiciousData()
     If suspiciousRowCount > 0 Then
         Dim exportSheet As Worksheet
         Set exportSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
-        exportSheet.Range("A1:I1").Value = Array("ID", "Date", "Employee", "Contact Info", "Office", "Client Name 1", "Client Name 2", "Client Name 3", "EGN")
+        exportSheet.Range("A1:I1").Value = Array("ID", "Date", "Agent", "Contact Info", "Location", "Entity 1", "Entity 2", "Entity 3", "PID")
         exportSheet.Range("A2").Resize(suspiciousRowCount, 9).Value = suspiciousData
         exportSheet.Cells.NumberFormat = "@" ' Format as text
         exportSheet.Columns("A:I").AutoFit ' Auto-fit columns
     End If
 
     AnalyzeSuspiciousGraph suspiciousData
-    CheckEmployeeMultipleOffices suspiciousData
+    CheckAgentMultipleLocations suspiciousData
     CheckTransactionFrequency suspiciousData
     CheckTransactionConcentration suspiciousData
     CheckDataChanges suspiciousData
-    AnalyzeEmployeeInteractionNetwork suspiciousData ' Call the new function
+    AnalyzeAgentInteractionNetwork suspiciousData ' Call the new function
 
     Application.ScreenUpdating = True
     Application.Calculation = xlCalculationAutomatic
@@ -109,7 +109,7 @@ Private Sub AnalyzeSuspiciousGraph(ByRef suspiciousData As Variant)
     ' Same as before
 End Sub
 
-Private Sub CheckEmployeeMultipleOffices(ByRef suspiciousData As Variant)
+Private Sub CheckAgentMultipleLocations(ByRef suspiciousData As Variant)
     ' Same as before
 End Sub
 
@@ -125,54 +125,54 @@ Private Sub CheckDataChanges(ByRef suspiciousData As Variant)
     ' Same as before
 End Sub
 
-Private Sub AnalyzeEmployeeInteractionNetwork(ByRef suspiciousData As Variant)
-    Dim employeeConnections As Object
-    Set employeeConnections = CreateObject("Scripting.Dictionary")
+Private Sub AnalyzeAgentInteractionNetwork(ByRef suspiciousData As Variant)
+    Dim agentConnections As Object
+    Set agentConnections = CreateObject("Scripting.Dictionary")
 
     Dim i As Long
     For i = 1 To UBound(suspiciousData, 1)
-        Dim employee As String: employee = suspiciousData(i, 3)
-        Dim office As String: office = suspiciousData(i, 5)
-        Dim client1 As String: client1 = suspiciousData(i, 6)
-        Dim client2 As String: client2 = suspiciousData(i, 7)
-        Dim client3 As String: client3 = suspiciousData(i, 8)
+        Dim agent As String: agent = suspiciousData(i, 3)
+        Dim location As String: location = suspiciousData(i, 5)
+        Dim entity1 As String: entity1 = suspiciousData(i, 6)
+        Dim entity2 As String: entity2 = suspiciousData(i, 7)
+        Dim entity3 As String: entity3 = suspiciousData(i, 8)
 
-        If Not employeeConnections.Exists(employee) Then
-            Set employeeConnections(employee) = CreateObject("Scripting.Dictionary")
+        If Not agentConnections.Exists(agent) Then
+            Set agentConnections(agent) = CreateObject("Scripting.Dictionary")
         End If
 
-        If Not employeeConnections(employee).Exists(office) Then
-            employeeConnections(employee).Add office, New Collection
+        If Not agentConnections(agent).Exists(location) Then
+            agentConnections(agent).Add location, New Collection
         End If
 
-        employeeConnections(employee)(office).Add client1, Nothing, Nothing, True
-        employeeConnections(employee)(office).Add client2, Nothing, Nothing, True
-        employeeConnections(employee)(office).Add client3, Nothing, Nothing, True
+        agentConnections(agent)(location).Add entity1, Nothing, Nothing, True
+        agentConnections(agent)(location).Add entity2, Nothing, Nothing, True
+        agentConnections(agent)(location).Add entity3, Nothing, Nothing, True
     Next i
 
     Dim networkSheet As Worksheet
     Set networkSheet = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
-    networkSheet.Name = "Employee Interaction Network"
+    networkSheet.Name = "Interaction Network"
 
     Dim nodeRow As Long: nodeRow = 1
-    For Each emp In employeeConnections
-        networkSheet.Cells(nodeRow, 1).Value = emp
+    For Each agt In agentConnections
+        networkSheet.Cells(nodeRow, 1).Value = agt
         nodeRow = nodeRow + 1
-    Next emp
+    Next agt
 
     Dim edgeRow As Long: edgeRow = 1
-    For Each emp In employeeConnections
-        Dim office As Variant
-        For Each office In employeeConnections(emp)
-            Dim client As Variant
-            For Each client In employeeConnections(emp)(office)
-                networkSheet.Cells(edgeRow, 2).Value = emp
-                networkSheet.Cells(edgeRow, 3).Value = office
-                networkSheet.Cells(edgeRow, 4).Value = client
+    For Each agt In agentConnections
+        Dim loc As Variant
+        For Each loc In agentConnections(agt)
+            Dim ent As Variant
+            For Each ent In agentConnections(agt)(loc)
+                networkSheet.Cells(edgeRow, 2).Value = agt
+                networkSheet.Cells(edgeRow, 3).Value = loc
+                networkSheet.Cells(edgeRow, 4).Value = ent
                 edgeRow = edgeRow + 1
-            Next client
-        Next office
-    Next emp
+            Next ent
+        Next loc
+    Next agt
 
     networkSheet.Columns("A:D").AutoFit
     networkSheet.Range("A1:D1").Font.Bold = True
@@ -181,23 +181,23 @@ Private Sub AnalyzeEmployeeInteractionNetwork(ByRef suspiciousData As Variant)
 End Sub
 
 Private Sub AnalyzeNetworkGraph(ByRef networkSheet As Worksheet)
-    Dim employeeConnections As Object
-    Set employeeConnections = CreateObject("Scripting.Dictionary")
+    Dim agentConnections As Object
+    Set agentConnections = CreateObject("Scripting.Dictionary")
 
     Dim row As Long
     For row = 2 To networkSheet.Cells(Rows.Count, 1).End(xlUp).Row
-        Dim employee As String: employee = networkSheet.Cells(row, 2).Value
-        If Not employeeConnections.Exists(employee) Then
-            employeeConnections(employee) = 1
+        Dim agent As String: agent = networkSheet.Cells(row, 2).Value
+        If Not agentConnections.Exists(agent) Then
+            agentConnections(agent) = 1
         Else
-            employeeConnections(employee) = employeeConnections(employee) + 1
+            agentConnections(agent) = agentConnections(agent) + 1
         End If
     Next row
 
     Dim hub As Variant
-    For Each hub In employeeConnections
-        If employeeConnections(hub) > Application.WorksheetFunction.Median(employeeConnections.Items) * 2 Then
-            MsgBox "Potential hub detected: " & hub & " has " & employeeConnections(hub) & " connections."
+    For Each hub In agentConnections
+        If agentConnections(hub) > Application.WorksheetFunction.Median(agentConnections.Items) * 2 Then
+            MsgBox "Potential hub detected: " & hub & " has " & agentConnections(hub) & " connections."
         End If
     Next hub
 
