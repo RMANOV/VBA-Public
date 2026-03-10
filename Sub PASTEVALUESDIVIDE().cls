@@ -1,7 +1,6 @@
 Sub PASTEVALUESDIVIDE()
     '
     ' PASTEVALUESDIVIDE Macro
-    ' Macro recorded 24.06.2011 by r.manov
     '
 
     '

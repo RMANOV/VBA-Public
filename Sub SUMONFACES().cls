@@ -1,7 +1,6 @@
 Sub SUMONFACES()
     '
     ' SUMONFACES Macro
-    ' Macro recorded 16.03.2011 by r.manov
     '
     ' Keyboard Shortcut: Ctrl+Shift+S
     '

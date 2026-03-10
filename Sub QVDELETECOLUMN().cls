@@ -1,7 +1,6 @@
 Sub QVDELETECOLUMN()
     '
     ' QVDELETECOLUMN Macro
-    ' Macro recorded 06.04.2011 by r.manov
     '
 
     '

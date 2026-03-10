@@ -1,7 +1,6 @@
 Sub DELETEROWSCOLUMNS()
     '
     ' DELETEROWSCOLUMNS Macro
-    ' Macro recorded 29.11.2010 by r.manov
     '
 
     '

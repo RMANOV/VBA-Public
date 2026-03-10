@@ -1,7 +1,6 @@
 Sub SELECTINGCOLORIZE()
     '
     ' SELECTINGCOLORIZE Macro
-    ' Macro recorded 19.03.2011 by r.manov
     '
     ' Keyboard Shortcut: Ctrl+Shift+G
     '

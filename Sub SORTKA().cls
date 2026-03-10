@@ -1,7 +1,6 @@
 Sub SORTKA()
     '
     ' SORTKA Macro
-    ' Macro recorded 07.10.2010 by r.manov
     '
     ' Keyboard Shortcut: Ctrl+Shift+A
     '

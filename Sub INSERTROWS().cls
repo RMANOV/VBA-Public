@@ -1,7 +1,6 @@
 Sub INSERTROWS()
     '
     ' INSERTROWS Macro
-    ' Macro recorded 10.7.2010 by r.manov
     '
     ' Keyboard Shortcut: Ctrl+Shift+I
     '

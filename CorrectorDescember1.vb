@@ -1,7 +1,6 @@
 
 
 Sub DecemberCorrector()
-'r.manov - 09.05.2023
 Application.ScreenUpdating = False
 ' select file "01-SEDMI4NI PRODAJBI.xlsm" and make it active
 Workbooks("01-SEDMI4NI PRODAJBI.xlsm").Activate

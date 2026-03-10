@@ -1,7 +1,6 @@
 Sub UNCOLORING()
     '
     ' UNCOLORING Macro
-    ' Macro recorded 17.11.2010 by r.manov
     '
     ' Keyboard Shortcut: Ctrl+Shift+U
     '

@@ -1,7 +1,6 @@
 Sub FIRSTGREEN()
     '
     ' FIRSTGREEN Macro
-    ' Macro recorded 20.01.2011 by r.manov
     '
 
     '

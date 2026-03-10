@@ -1,7 +1,6 @@
 Sub PASTEFORMULA()
     '
     ' PASTEFORMULA Macro
-    ' Macro recorded 16.12.2010 by r.manov
     '
 
     '

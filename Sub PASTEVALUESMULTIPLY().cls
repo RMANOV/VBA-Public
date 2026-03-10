@@ -1,7 +1,6 @@
 Sub PASTEVALUESMULTIPLY()
     '
     ' PASTEVALUESMULTIPLY Macro
-    ' Macro recorded 16.12.2010 by r.manov
     '
 
     '

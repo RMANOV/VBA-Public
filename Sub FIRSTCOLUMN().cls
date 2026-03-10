@@ -1,7 +1,6 @@
 Sub FIRSTCOLUMN()
     '
     ' FIRSTCOLUMN Macro
-    ' Macro recorded 25.11.2010 by r.manov
     '
 
     '

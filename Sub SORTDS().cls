@@ -1,7 +1,6 @@
 Sub SORTDS()
     '
     ' Macro2 Macro
-    ' Macro recorded 14.12.2012 by r.manov
     '
 
     '

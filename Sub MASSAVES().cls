@@ -1,7 +1,6 @@
 Sub MASSAVES()
     '
     ' MASSAVES Macro
-    ' Macro recorded 27.10.2014 by r.manov
     '
     ' Keyboard Shortcut: Ctrl+Shift+S
     '

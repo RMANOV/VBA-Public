@@ -1,7 +1,6 @@
 Sub DUPLICATES()
     '
     ' DUPLICATES Macro
-    ' Macro recorded 07.7.2010 by r.manov
     '
     ' Keyboard Shortcut: Ctrl+Shift+D
     '

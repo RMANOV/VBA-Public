@@ -1,7 +1,6 @@
 Sub LASTROW()
     '
     ' LASTROW Macro
-    ' Macro recorded 23.11.2010 by r.manov
     '
 
     '

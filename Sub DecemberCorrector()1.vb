@@ -1,5 +1,4 @@
 Sub DecemberCorrector()
-    ' r.manov - 09.05.2023
     Application.ScreenUpdating = False
     Dim wb As Workbook
     Set wb = Workbooks("01-SEDMI4NI PRODAJBI.xlsm")
