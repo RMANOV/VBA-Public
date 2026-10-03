@@ -44,8 +44,8 @@ let
                     else
                         cleaned,
 
-                    // Step 4: Parse — with try for safety
-                    parsed = try Number.From(normalized) otherwise null
+                    // Step 4: Parse normalized dot decimals with explicit culture
+                    parsed = try Number.From(normalized, "en-US") otherwise null
                 in
                     parsed
         in
@@ -95,12 +95,14 @@ let
     // ── Sample data ──────────────────────────────────────────
     SalesData = Table.FromRecords({
         [Product = "Alpha",   Amount = "$1,234.56", Target = 1000],
-        [Product = "Beta",    Amount = "€ 850,00",  Target = 0],
+        [Product = "Beta",    Amount = "€ 850.00",  Target = 0],
         [Product = "Gamma",   Amount = "  2500  ",  Target = 2000],
         [Product = "Delta",   Amount = null,         Target = 500],
         [Product = "Epsilon", Amount = "£3,100.75", Target = 3000]
     }),
 
+    // Explicit EU fixture: fnCleanCurrency("€ 850,00", ",") = 850.
+    // The table below uses dot decimals uniformly; no format guessing.
     // ── Apply fnCleanCurrency via Table.TransformColumns ─────
     // This is the idiomatic way to apply a function to an entire column.
     // The function signature matches what TransformColumns expects:

@@ -52,7 +52,7 @@ let
     //
     // List.Generate takes 4 arguments:
     //   initial   — starting state (page 0)
-    //   condition — keep going? (did we get a full page?)
+    //   condition — emit the current nonempty page, even if it is short
     //   next      — advance state (increment offset)
     //   selector  — what to extract from each state (the data)
     //
@@ -73,14 +73,13 @@ let
                 ],
 
         // ── CONDITION ───────────────────────────────────────────
-        // Continue as long as the previous page was full.
-        // A page with fewer records than PageSize means we've
-        // reached the last page.
-        each [hasMore],
+        // The condition tests the CURRENT candidate before the selector.
+        // Emit its data even when it is the final short page.
+        each [receivedCount] > 0,
 
         // ── NEXT STATE ──────────────────────────────────────────
-        // Increment offset by PageSize, fetch next page, update flags.
-        each
+        // A full page needs another request; a short page ends locally.
+        each if [hasMore] then
             let
                 nextOffset = [currentOffset] + PageSize,
                 page       = FetchPage(nextOffset)
@@ -90,7 +89,10 @@ let
                     currentOffset = nextOffset,
                     receivedCount = List.Count(page[data]),
                     hasMore       = List.Count(page[data]) >= PageSize
-                ],
+                ]
+        else
+                [pageData = {}, currentOffset = [currentOffset],
+                 receivedCount = 0, hasMore = false],
 
         // ── SELECTOR ────────────────────────────────────────────
         // Extract just the data array from each state.
@@ -106,7 +108,12 @@ let
     CombinedRecords = List.Combine(AllPages),
 
     // ── Convert to table ────────────────────────────────────────
-    Result = Table.FromRecords(CombinedRecords),
+    // Empty input still needs the columns used by the typing step.
+    // Keep ordinary record inference for nonempty data, including extra fields.
+    Result = if List.IsEmpty(CombinedRecords) then
+        #table(type table [id = Int64.Type, name = text, created_at = datetime], {})
+    else
+        Table.FromRecords(CombinedRecords),
 
     // ── Type the columns (adjust to match your actual API) ──────
     Typed = Table.TransformColumnTypes(Result, {
@@ -121,7 +128,7 @@ let
     //
     // Some APIs use a cursor token instead of offset/limit.
     // The response includes a "nextCursor" field; pass it in
-    // the next request. Loop until nextCursor is null.
+    // the next request. Emit the current page before stopping on a null token.
     //
     // CursorPages = List.Generate(
     //     () =>
@@ -129,16 +136,17 @@ let
     //         [
     //             pageData   = page[data],
     //             nextCursor = page[nextCursor],
-    //             hasMore    = page[nextCursor] <> null
+    //             isTerminal = false
     //         ],
-    //     each [hasMore],
-    //     each
+    //     each not [isTerminal],
+    //     each if [nextCursor] <> null then
     //         let page = FetchWithCursor([nextCursor]) in
     //         [
     //             pageData   = page[data],
     //             nextCursor = page[nextCursor],
-    //             hasMore    = page[nextCursor] <> null
-    //         ],
+    //             isTerminal = false
+    //         ]
+    //     else [pageData = {}, nextCursor = null, isTerminal = true],
     //     each [pageData]
     // )
     //
@@ -147,7 +155,7 @@ let
     // ═══════════════════════════════════════════════════════════
     //
     // GitHub-style APIs return a Link header with rel="next".
-    // Parse it to get the full URL for the next page.
+    // Parse it to get the next URL; emit the current page before stopping.
     //
     // LinkPages = List.Generate(
     //     () =>
@@ -155,16 +163,17 @@ let
     //         [
     //             pageData = Json.Document(resp),
     //             nextUrl  = GetNextLink(Value.Metadata(resp)),
-    //             hasMore  = GetNextLink(Value.Metadata(resp)) <> null
+    //             isTerminal = false
     //         ],
-    //     each [hasMore],
-    //     each
+    //     each not [isTerminal],
+    //     each if [nextUrl] <> null then
     //         let resp = Web.Contents([nextUrl]) in
     //         [
     //             pageData = Json.Document(resp),
     //             nextUrl  = GetNextLink(Value.Metadata(resp)),
-    //             hasMore  = GetNextLink(Value.Metadata(resp)) <> null
-    //         ],
+    //             isTerminal = false
+    //         ]
+    //     else [pageData = {}, nextUrl = null, isTerminal = true],
     //     each [pageData]
     // )
     //

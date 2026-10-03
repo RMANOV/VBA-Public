@@ -32,15 +32,15 @@ let
             Table.AddColumn(Source, "Discount", each 0.00, type number),
 
     // ═══════════════════════════════════════════════════════════
-    // PATTERN 2: MissingField.UseDefault — the PREFERRED approach
+    // PATTERN 2: MissingField.UseNull — fill absent columns with null
     // ═══════════════════════════════════════════════════════════
-    // Table.SelectColumns with MissingField.UseDefault silently
+    // Table.SelectColumns with MissingField.UseNull silently
     // adds null columns for any missing names. No error, no branch.
     // This is the cleanest single-line defense.
     Pattern2_SelectWithDefault = Table.SelectColumns(
         Source,
         {"OrderID", "Product", "Quantity", "Price", "Discount"},
-        MissingField.UseDefault  // Missing columns become null
+        MissingField.UseNull  // Missing columns become null
     ),
 
     // Replace nulls from the default with actual values
