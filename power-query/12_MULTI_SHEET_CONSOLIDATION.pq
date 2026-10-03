@@ -63,7 +63,7 @@ let
     // Source = Excel.Workbook(
     //     File.Contents("C:\Reports\SalesData.xlsx"),
     //     null,   // null = don't promote headers yet (we do it manually)
-    //     true    // true = use InferSheetDimensions for performance
+    //     true    // delayTypes = true leaves returned columns untyped
     // ),
 
     Source = SimulatedSheets,

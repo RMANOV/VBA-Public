@@ -97,7 +97,7 @@ Private Sub ProcessSuspiciousPatterns(ByRef dict As Object, ByRef data As Varian
                     rowData(4) = key
                     rowData(5) = data(idx, COL_LOCATION)
                     rowData(6) = data(idx, COL_ENTITY1)
-                    rowData(7) = data(idx, COL_ENTITY2) 
+                    rowData(7) = data(idx, COL_ENTITY2)
                     rowData(8) = data(idx, COL_ENTITY3)
                     rowData(9) = data(idx, COL_PID)
                     suspiciousData.Add rowData

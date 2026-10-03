@@ -3,24 +3,24 @@
 // CATEGORY: Defensive Programming | DIFFICULTY: Intermediate
 // ═══════════════════════════════════════════════════════════════
 // WHAT: Complete null handling patterns — the traps and the solutions
-// WHY:  M uses three-valued logic; ignoring this causes silent data loss
-// KEY LESSON: M uses three-valued logic. null = null is null. Always use "is null".
+// WHY:  Equality, ordering, and logical operators handle null differently
+// KEY LESSON: null = null is true; relational comparisons can return null.
 // ═══════════════════════════════════════════════════════════════
 
 let
     // ═══════════════════════════════════════════════════════════
-    // THE TRAP: null = null returns null, NOT true
+    // THE DISTINCTION: equality with null differs from ordering
     // ═══════════════════════════════════════════════════════════
     //
-    //   null = null      → null   (NOT true!)
-    //   null <> null     → null   (NOT true either!)
-    //   null = 5         → null
+    //   null = null      → true
+    //   null <> null     → false
+    //   null = 5         → false
     //   null > 0         → null
     //   if null then ... → ERROR  (if requires logical, not null)
     //
-    // This is THREE-VALUED LOGIC (like SQL). Any comparison with null
-    // yields null, which is neither true nor false. Filtering on
-    // [Field] = null will return ZERO rows — the condition is never true.
+    // M equality is not SQL null equality: null equals only itself.
+    // Ordering and logical operations may propagate null instead.
+    // Filtering on [Field] = null selects rows whose value is null.
 
     // ── STEP 1: Sample data with nulls ───────────────────────
     Source = Table.FromRecords({
@@ -39,17 +39,16 @@ let
     }),
 
     // ═══════════════════════════════════════════════════════════
-    // PATTERN 1: Correct null check — use "is null"
+    // PATTERN 1: Null checks — equality or type compatibility
     // ═══════════════════════════════════════════════════════════
 
-    // WRONG: Table.SelectRows(Typed, each [Revenue] = null)   ← returns 0 rows!
-    // RIGHT: Table.SelectRows(Typed, each [Revenue] is null)  ← returns Bob's row
+    // Both [Revenue] = null and [Revenue] is null select Bob's row.
+    // Use <> null or not (... is null) to select non-null values.
 
     NullRows = Table.SelectRows(Typed, each [Revenue] is null),
-    NonNullRows = Table.SelectRows(Typed, each [Revenue] <> null is not true),
-    // Simpler non-null check:
-    NonNullRowsSimple = Table.SelectRows(Typed, each [Revenue] is not null),
-    // Note: "is not null" is an undocumented but widely supported syntax in M
+    NonNullRows = Table.SelectRows(Typed, each [Revenue] <> null),
+    // Equivalent type-compatibility check:
+    NonNullRowsSimple = Table.SelectRows(Typed, each not ([Revenue] is null)),
 
     // ═══════════════════════════════════════════════════════════
     // PATTERN 2: Coalesce function (IFNULL / COALESCE equivalent)
@@ -118,7 +117,7 @@ let
         else if a is null or b is null then false
         else a = b,
 
-    // Demo: fnNullSafeEquals(null, null) = true  (unlike null = null = null)
+    // Demo: fnNullSafeEquals(null, null) = true, as with null = null
     SafeCompareDemo = fnNullSafeEquals(null, null),    // = true
 
     // ═══════════════════════════════════════════════════════════
@@ -153,8 +152,8 @@ let
     // Region   | 1
     //
     // CHEAT SHEET:
-    //   x is null           → true/false (CORRECT way to check)
-    //   x = null            → null       (WRONG — never true)
+    //   x is null           → true if x is null, otherwise false
+    //   x = null            → true if x is null, otherwise false
     //   if x is null then 0 else x       → inline coalesce
     //   Table.ReplaceValue(..., null, 0, Replacer.ReplaceValue, {cols})
     //                       → bulk null replacement
