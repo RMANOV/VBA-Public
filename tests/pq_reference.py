@@ -17,9 +17,9 @@ def source(name):
     if ref:
         return subprocess.check_output(
             ['git', '-C', str(ROOT), 'show', ref + ':power-query/' + name],
-            text=True,
+            text=True, encoding='utf-8',
         )
-    return (ROOT / 'power-query' / name).read_text()
+    return (ROOT / 'power-query' / name).read_text(encoding='utf-8')
 
 
 def pagination_bindings():
