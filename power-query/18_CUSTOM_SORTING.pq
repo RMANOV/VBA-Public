@@ -60,6 +60,12 @@ let
     // ═══════════════════════════════════════════════════════════
     CleanResult = Table.RemoveColumns(Sorted, {"PrioritySortKey"}),
 
+    // no need an intermediate steps, just direct use of function in Table.Sort
+    CleanResult2 = Table.Sort(
+        Tasks, 
+        (x)=> List.PositionOf(PriorityOrder, x[Priority])
+    ),
+
     // ═══════════════════════════════════════════════════════════
     // BONUS 1: Multi-level sort
     // ═══════════════════════════════════════════════════════════
@@ -71,6 +77,13 @@ let
     }),
 
     MultiLevelClean = Table.RemoveColumns(MultiLevelSorted, {"PrioritySortKey"}),
+
+    // no need an intermediate steps, just direct use of function in Table.Sort
+    MultiLevelClean2 = Table.Sort(
+        Tasks, {
+        (x)=> List.PositionOf(PriorityOrder, x[Priority]),
+        {"DueDate",         Order.Ascending}
+    }),
 
     // ═══════════════════════════════════════════════════════════
     // BONUS 2: Day-of-week sorting (Monday first)
