@@ -100,8 +100,8 @@ let
         "NetRevenue",
         each
             let
-                rev = if [Revenue] is null then 0 else [Revenue],
-                disc = if [Discount] is null then 0 else [Discount]
+                rev = [Revenue] ?? 0,
+                disc = [Discount] ?? 0
             in
                 rev - disc,
         type number
